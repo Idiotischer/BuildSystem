@@ -1,15 +1,19 @@
-package me.kodysimpson.menumanagersystem.listeners;
+package de.idiotischeryt.buildSystem.listeners;
 
-import me.kodysimpson.menumanagersystem.menusystem.Menu;
+import de.idiotischeryt.buildSystem.menusystem.Menu;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.InventoryHolder;
+import org.jetbrains.annotations.NotNull;
 
+//    credits kody simpson :)
+//    to lazy to code my own :)
 public class MenuListener implements Listener {
 
     @EventHandler
-    public void onMenuClick(InventoryClickEvent e){
+    public void onMenuClick(InventoryClickEvent e) {
 
         InventoryHolder holder = e.getInventory().getHolder();
         //If the inventoryholder of the inventory clicked on
@@ -27,7 +31,23 @@ public class MenuListener implements Listener {
             //Call the handleMenu object which takes the event and processes it
             menu.handleMenu(e);
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onMenuClose(@NotNull InventoryCloseEvent e) {
+
+        InventoryHolder holder = e.getInventory().getHolder();
+        //If the inventoryholder of the inventory clicked on
+        // is an instance of Menu, then gg. The reason that
+        // an InventoryHolder can be a Menu is because our Menu
+        // class implements InventoryHolder!!
+        if (holder instanceof Menu m) {
+            if (!e.getInventory().equals(m.getInventory())) return;
+
+            m.handleClose(e);
+        }
 
     }
+
 
 }
