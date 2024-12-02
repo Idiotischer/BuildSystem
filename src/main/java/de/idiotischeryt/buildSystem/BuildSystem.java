@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,6 +58,8 @@ public final class BuildSystem extends JavaPlugin {
 
         ui = new InventoryUI();
 
+        defaultComment();
+
         saveDefaultConfig();
 
         loop();
@@ -82,6 +84,62 @@ public final class BuildSystem extends JavaPlugin {
             configuration.save(registryPath.toFile());
         } catch (IOException | InvalidConfigurationException e) {
             throw new RuntimeException(e);
+        }
+
+        defaultComment(registryPath.toFile(), "This file will be auto-filled with the according registry sections.");
+
+    }
+
+
+    public void defaultComment() {
+        File configFile = new File(this.getDataFolder(), "config.yml");
+
+        String comment = """
+                Example Template:
+                
+                Skywars:
+                   middleLocations: [ ]
+                   middleContainerLocations: [ ]
+                   spawnLocs: [ ]""";
+
+        try {
+            List<String> lines = new BufferedReader(new FileReader(configFile)).lines().toList();
+
+            boolean hasComment = !lines.isEmpty() && lines.get(0).startsWith("# Example Template:");
+
+            if (!hasComment) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(configFile))) {
+                    writer.write("# " + comment.replace("\n", "\n# ") + "\n");
+
+                    for (String line : lines) {
+                        writer.write(line + "\n");
+                    }
+                }
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void defaultComment(File configFile, String comment) {
+        try {
+            List<String> lines = new BufferedReader(new FileReader(configFile)).lines().toList();
+
+            boolean hasComment = !lines.isEmpty() && lines.get(0).startsWith("# Example Template:");
+
+            if (!hasComment) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(configFile))) {
+                    writer.write("# " + comment.replace("\n", "\n# ") + "\n");
+
+                    for (String line : lines) {
+                        writer.write(line + "\n");
+                    }
+                }
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
