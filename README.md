@@ -9,4 +9,4 @@ Feel free to fork this Project or contributer into it! Thx <3**
 - [X] Add /build show and /build hide command show should have a key for showing all locations in the configsection (that is the key).
 - [X] Add /build add command for adding to a key in the config. If using location use ~ ~ ~ [~ ~] or <x> <y> <z> [pitch yaw]
 - [X] Add /build for opening build menu.
-- [ ] Cleanup configmanager and overall a little code overhaul.
+- [ ] Cleanup configmanager and overall a little code overhaul. Remove Hardcoded stuff, etc.)
