@@ -1,8 +1,0 @@
-name: BuildSystem
-version: '1.0-SNAPSHOT'
-main: de.idiotischeryt.buildSystem.BuildSystem
-api-version: '1.21'
-commands:
-  build:
-softdepend:
-  - ProtocolLib
