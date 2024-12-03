@@ -44,22 +44,19 @@ public class BuildSettingsMenu extends Menu {
             true, new NamespacedKey(BuildSystem.getInstance(), "Empty_Object"));
     final ItemStack spaceItem2 = makeItem(Material.NAME_TAG,
             ChatColor.GOLD.toString() + ChatColor.BOLD + "Worldname",
-            true, new NamespacedKey(BuildSystem.getInstance(), "Mapname_Object")); // opens rename ui
+            true, new NamespacedKey(BuildSystem.getInstance(), "Mapname_Object"));
     final ItemStack spaceItem3 = makeItem(Material.NAME_TAG,
             ChatColor.GOLD.toString() + ChatColor.BOLD + "Worldtype",
-            true, new NamespacedKey(BuildSystem.getInstance(), "Minigame_Object")); // opens rename ui
-
-    // öffnet auch n rename ui und ist animated, bzw. wird noch animated
+            true, new NamespacedKey(BuildSystem.getInstance(), "Minigame_Object"));
     final ItemStack spaceItem4 = makeItem(Material.GRASS_BLOCK,
             ChatColor.GOLD.toString() + ChatColor.BOLD + "Biome",
             true, new NamespacedKey(BuildSystem.getInstance(), "Biome_Object"));
-
     final ItemStack spaceItem5 = makeItem(Material.STRIDER_SPAWN_EGG,
             ChatColor.GOLD.toString() + ChatColor.BOLD + "Spawn Mobs",
-            true, new NamespacedKey(BuildSystem.getInstance(), "SpawnMobs_Object")); // boolean without extra ui
+            true, new NamespacedKey(BuildSystem.getInstance(), "SpawnMobs_Object"));
     final ItemStack spaceItem6 = makeItem(Material.YELLOW_GLAZED_TERRACOTTA,
             ChatColor.GOLD.toString() + ChatColor.BOLD + "DaylightCycle",
-            true, new NamespacedKey(BuildSystem.getInstance(), "DaylightCycle_Object")); // boolean without extra ui
+            true, new NamespacedKey(BuildSystem.getInstance(), "DaylightCycle_Object"));
 
     public BuildSettingsMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
