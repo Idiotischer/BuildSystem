@@ -59,7 +59,7 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
 
             String map = names[0];
             String minigame = names[1];
-            
+
             if (args.length == 5) {
                 String value2 = args[3];
                 String value3 = args[4];
@@ -114,6 +114,11 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                 String key = args[1];
                 String[] names = BuildManager.namesByWorld(p.getWorld());
 
+                if (names == null) {
+                    commandSender.sendMessage(BuildSystem.prefix().append(Component.text("Can't find your world as build world. Please go into the right world!").color(NamedTextColor.DARK_RED)));
+                    return false;
+                }
+                
                 FileConfiguration config = new YamlConfiguration();
                 Path dataFolder = Paths.get(BuildSystem.getInstance().getDataPath().toString(), names[1]);
                 if (Files.notExists(dataFolder)) Files.createDirectories(dataFolder);

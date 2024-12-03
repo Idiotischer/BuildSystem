@@ -4,6 +4,7 @@ import de.idiotischeryt.buildSystem.world.WorldCreator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -20,10 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BuildManager {
     public static void createWorld(Player p, String mapName, String minigame, boolean empty, Biome biome, boolean spawnMobs, boolean dayNightCycle, boolean weatherCycle) throws IOException, InvalidConfigurationException {
@@ -52,10 +50,21 @@ public class BuildManager {
     }
 
     public static void delete(@NotNull World world) {
-        world.getPlayers().forEach(player ->
-                player.kick(Component.text("World is getting deleted!")
-                        .decorate(TextDecoration.BOLD)
-                        .color(NamedTextColor.DARK_RED))
+        world.getPlayers().forEach(player -> {
+                    player.teleport(
+                            Objects.requireNonNull(Bukkit.getWorld("world")).getSpawnLocation()
+                    );
+                    player.showTitle(Title.title(
+                            Component.text("World is getting")
+                                    .color(NamedTextColor.DARK_RED)
+                                    .decorate(TextDecoration.BOLD),
+                            Component.text("deleted")
+                                    .color(NamedTextColor.DARK_RED)
+                                    .decorate(TextDecoration.BOLD)
+                    ));
+
+
+                }
         );
 
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
