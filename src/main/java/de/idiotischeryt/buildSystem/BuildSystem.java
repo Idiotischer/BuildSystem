@@ -2,10 +2,12 @@ package de.idiotischeryt.buildSystem;
 
 import de.idiotischeryt.buildSystem.command.BuildCommand;
 import de.idiotischeryt.buildSystem.gui.InventoryUI;
+import de.idiotischeryt.buildSystem.listeners.Listener;
 import de.idiotischeryt.buildSystem.listeners.MenuListener;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,6 +29,16 @@ public final class BuildSystem extends JavaPlugin {
     private final List<String> configSection = new ArrayList<>();
     static FileConfiguration configuration = new YamlConfiguration();
     public Path registryPath = null;
+
+    public static Path worldFolder = null;
+
+    public static Path inventoryConfig = null;
+
+    public static FileConfiguration invConfiguration = new YamlConfiguration();
+
+    public static Path spawnConfig = null;
+
+    public static FileConfiguration spawnConfiguration = new YamlConfiguration();
 
     private static final HashMap<Player, PlayerMenuUtility> playerMenuUtilityMap = new HashMap<>();
 
@@ -71,8 +83,38 @@ public final class BuildSystem extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
 
         configManager = new ConfigManager();
-
         try {
+
+            worldFolder = Paths.get(this.getDataPath().toString(), "other");
+
+            if (Files.notExists(worldFolder)) {
+                Files.createDirectory(worldFolder);
+            }
+
+            spawnConfig = Paths.get(worldFolder.toString(), "playerspawns.yml");
+
+            if (Files.notExists(spawnConfig)) {
+                Files.createFile(spawnConfig);
+            }
+
+            defaultComment(spawnConfig.toFile(), "Here, all player spawnlocaions are saved!");
+
+            spawnConfiguration.load(spawnConfig.toFile());
+
+            spawnConfiguration.save(spawnConfig.toFile());
+
+            inventoryConfig = Paths.get(worldFolder.toString(), "playerinvs.yml");
+
+            if (Files.notExists(inventoryConfig)) {
+                Files.createFile(inventoryConfig);
+            }
+
+            defaultComment(inventoryConfig.toFile(), "Here, player inventories for each world are saved!");
+
+            invConfiguration.load(inventoryConfig.toFile());
+
+            invConfiguration.save(inventoryConfig.toFile());
+
             registryPath = Paths.get(this.getDataPath().toString(), "registry.yml");
 
             if (Files.notExists(registryPath)) {
@@ -88,6 +130,7 @@ public final class BuildSystem extends JavaPlugin {
 
         defaultComment(registryPath.toFile(), "This file will be auto-filled with the according registry sections.");
 
+        Bukkit.getPluginManager().registerEvents(new Listener(), this);
     }
 
 
@@ -126,21 +169,31 @@ public final class BuildSystem extends JavaPlugin {
         try {
             List<String> lines = new BufferedReader(new FileReader(configFile)).lines().toList();
 
-            boolean hasComment = !lines.isEmpty() && lines.get(0).startsWith("# Example Template:");
+            String normalizedComment = "# " + comment.replace("\n", "\n# ").trim();
 
-            if (!hasComment) {
+            String fileHeader = lines.stream()
+                    .takeWhile(line -> line.startsWith("#"))
+                    .reduce((line1, line2) -> line1 + "\n" + line2)
+                    .orElse("")
+                    .trim();
+
+            if (!fileHeader.equals(normalizedComment)) {
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(configFile))) {
-                    writer.write("# " + comment.replace("\n", "\n# ") + "\n");
+                    writer.write(normalizedComment + "\n");
 
                     for (String line : lines) {
                         writer.write(line + "\n");
                     }
                 }
-
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+    public static void updateOrSetPlayer(FileConfiguration config, Player p, Object value) {
+        config.set(p.getUniqueId().toString(), value);
     }
 
     //    credits kody simpson :)
