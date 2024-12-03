@@ -58,8 +58,12 @@ public class BuildSettingsMenu extends Menu {
             ChatColor.GOLD.toString() + ChatColor.BOLD + "DaylightCycle",
             true, new NamespacedKey(BuildSystem.getInstance(), "DaylightCycle_Object"));
 
+    Menu current;
+
     public BuildSettingsMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
+
+        current = this;
     }
 
     @Override
@@ -130,7 +134,7 @@ public class BuildSettingsMenu extends Menu {
                         .text("Biome name here")
                         .itemLeft(makeItem(Material.NAME_TAG, "Rename me", false))
                         .onClose((state) -> {
-                            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), this::open);
+                            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
                         })
                         .onClick((slot, state) -> {
 
@@ -235,7 +239,7 @@ public class BuildSettingsMenu extends Menu {
                     public void handleClose(InventoryCloseEvent e) {
                         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
-                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), this::open);
+                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
                     }
 
                     @Override
@@ -353,7 +357,7 @@ public class BuildSettingsMenu extends Menu {
                     public void handleClose(InventoryCloseEvent e) {
                         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
-                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), this::open);
+                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
                     }
 
                     @Override
@@ -444,7 +448,7 @@ public class BuildSettingsMenu extends Menu {
                     public void handleClose(InventoryCloseEvent e) {
                         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
-                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), this::open);
+                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
                     }
 
                     @Override
