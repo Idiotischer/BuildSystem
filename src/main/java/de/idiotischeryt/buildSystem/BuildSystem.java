@@ -5,9 +5,11 @@ import de.idiotischeryt.buildSystem.gui.InventoryUI;
 import de.idiotischeryt.buildSystem.listeners.MenuListener;
 import de.idiotischeryt.buildSystem.listeners.PlayerListener;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
+import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.WorldCreator;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -128,6 +130,13 @@ public final class BuildSystem extends JavaPlugin {
         defaultComment(registryPath.toFile(), "This file will be auto-filled with the according registry sections.");
 
         Bukkit.getPluginManager().registerEvents(new PlayerListener(), this);
+
+        for (String name : WorldManagementMenu.getWorlds()) {
+
+            if (Bukkit.getWorld(name) != null) continue;
+
+            new WorldCreator(name).createWorld();
+        }
     }
 
 
