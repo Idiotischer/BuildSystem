@@ -23,6 +23,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
+import static org.bukkit.Bukkit.getServer;
+
 public class BuildManager {
     public static void createWorld(Player p, String mapName, String minigame, boolean empty, Biome biome, boolean spawnMobs, boolean dayNightCycle, boolean weatherCycle) throws IOException, InvalidConfigurationException {
         YamlConfiguration configuration = (YamlConfiguration) BuildSystem.getInstance().getConfigManager().createConfig(mapName, minigame);
@@ -52,7 +54,7 @@ public class BuildManager {
     public static void delete(@NotNull World world) {
         world.getPlayers().forEach(player -> {
                     player.teleport(
-                            Objects.requireNonNull(Bukkit.getWorld("world")).getSpawnLocation()
+                            Objects.requireNonNull(getServer().getWorlds().getFirst()).getSpawnLocation()
                     );
                     player.showTitle(Title.title(
                             Component.text("World is getting")
@@ -128,12 +130,9 @@ public class BuildManager {
             config.load(ymlPath.toFile());
 
             if (value instanceof Location location) {
-                value = Map.<String, Number>of(
-                        "x", location.getX(),
-                        "y", location.getY(),
-                        "z", location.getZ(),
-                        "pitch", location.getPitch(),
-                        "yaw", location.getYaw());
+                Map<String, Object> map = location.serialize();
+                map.remove("world");
+                value = map;
             }
 
             List<Object> contents = (List<Object>) config.getList(key);

@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class WorldSettingsMenu extends Menu {
 
-    World world = null;
+    World world;
 
     public WorldSettingsMenu(PlayerMenuUtility playerMenuUtility, World world) {
         super(playerMenuUtility);

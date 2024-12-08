@@ -6,11 +6,13 @@ import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
 import de.idiotischeryt.buildSystem.menusystem.SignUI;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -131,16 +133,21 @@ public class WorldManagementMenu extends PaginatedMenu {
 
     public static ArrayList<String> worlds = new ArrayList<>();
 
+    public static ArrayList<String> getWorlds() {
+        loop();
+
+        return worlds;
+    }
+
+
     @Override
     public void setMenuItems() {
-
         addMenuBorder();
 
-        loop();
 
         //The thing you will be looping through to place items
         // Pagination loop template
-        if (!worlds.isEmpty()) {
+        if (!getWorlds().isEmpty()) {
             for (int i = 0; i < getMaxItemsPerPage(); i++) {
                 index = getMaxItemsPerPage() * page + i;
                 if (index >= worlds.size()) break;
@@ -152,8 +159,14 @@ public class WorldManagementMenu extends PaginatedMenu {
         }
     }
 
-    public void loop() {
+    public static void loop() {
         FileConfiguration config = BuildSystem.getConfiguration();
+
+        try {
+            config.load(BuildSystem.getInstance().registryPath.toFile());
+        } catch (IOException | InvalidConfigurationException e) {
+            throw new RuntimeException(e);
+        }
 
         worlds.clear();
 
@@ -165,10 +178,12 @@ public class WorldManagementMenu extends PaginatedMenu {
     }
 
 
-    private void add(ConfigurationSection config) {
+    private static void add(ConfigurationSection config) {
         for (String section : config.getKeys(false)) {
             if (config.isConfigurationSection(section)) {
-                if (worlds.contains(section)) return;
+                worlds.remove(section);
+
+                /* updating the section for some edge cases */
 
                 worlds.add(section);
             }

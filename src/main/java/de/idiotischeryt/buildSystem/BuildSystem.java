@@ -2,8 +2,8 @@ package de.idiotischeryt.buildSystem;
 
 import de.idiotischeryt.buildSystem.command.BuildCommand;
 import de.idiotischeryt.buildSystem.gui.InventoryUI;
-import de.idiotischeryt.buildSystem.listeners.Listener;
 import de.idiotischeryt.buildSystem.listeners.MenuListener;
+import de.idiotischeryt.buildSystem.listeners.PlayerListener;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -85,7 +85,7 @@ public final class BuildSystem extends JavaPlugin {
         configManager = new ConfigManager();
         try {
 
-            worldFolder = Paths.get(this.getDataPath().toString(), "other");
+            worldFolder = Paths.get(this.getDataPath().toString(), "playerdata");
 
             if (Files.notExists(worldFolder)) {
                 Files.createDirectory(worldFolder);
@@ -95,25 +95,22 @@ public final class BuildSystem extends JavaPlugin {
 
             if (Files.notExists(spawnConfig)) {
                 Files.createFile(spawnConfig);
+
+                defaultComment(spawnConfig.toFile(), "Here, all player spawnlocaions are saved!");
+
+                spawnConfiguration.save(spawnConfig.toFile());
             }
 
-            defaultComment(spawnConfig.toFile(), "Here, all player spawnlocaions are saved!");
-
-            spawnConfiguration.load(spawnConfig.toFile());
-
-            spawnConfiguration.save(spawnConfig.toFile());
 
             inventoryConfig = Paths.get(worldFolder.toString(), "playerinvs.yml");
 
             if (Files.notExists(inventoryConfig)) {
                 Files.createFile(inventoryConfig);
+
+                defaultComment(inventoryConfig.toFile(), "Here, player inventories for each world are saved!");
+
+                invConfiguration.save(inventoryConfig.toFile());
             }
-
-            defaultComment(inventoryConfig.toFile(), "Here, player inventories for each world are saved!");
-
-            invConfiguration.load(inventoryConfig.toFile());
-
-            invConfiguration.save(inventoryConfig.toFile());
 
             registryPath = Paths.get(this.getDataPath().toString(), "registry.yml");
 
@@ -130,7 +127,7 @@ public final class BuildSystem extends JavaPlugin {
 
         defaultComment(registryPath.toFile(), "This file will be auto-filled with the according registry sections.");
 
-        Bukkit.getPluginManager().registerEvents(new Listener(), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerListener(), this);
     }
 
 

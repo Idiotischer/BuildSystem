@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.bukkit.Bukkit.getServer;
+
 public class BuildSettingsMenu extends Menu {
     String[] mapName = new String[]{""};
     String[] minigameName = new String[]{""};
@@ -107,7 +109,7 @@ public class BuildSettingsMenu extends Menu {
                     }
                 }
 
-                System.out.println(configSections);
+                configSections.add(getServer().getWorlds().getFirst().getName());
 
                 handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Map name here", mapName, configSections, ChatColor.RED + "That map already exists!", true);
             } else if (e.getCurrentItem().getType() == Material.NAME_TAG && e.getCurrentItem()

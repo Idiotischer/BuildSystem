@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.bukkit.Bukkit.getServer;
+
 public class BuildCommand implements CommandExecutor, TabCompleter {
 
     @Override
@@ -93,6 +95,10 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
         } else if (args.length > 0 && args[0].equals("hide")) {
             if (!(commandSender instanceof Player p)) return false;
             LocationViewer.hide(p);
+        } else if (args.length > 0 && args[0].equals("default")) {
+            if (!(commandSender instanceof Player p)) return false;
+
+            p.teleport(getServer().getWorlds().getFirst().getSpawnLocation());
         } else if (args.length > 0 && args[0].equals("show")) {
             if (args.length < 2) {
                 commandSender.sendMessage(
@@ -118,7 +124,7 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                     commandSender.sendMessage(BuildSystem.prefix().append(Component.text("Can't find your world as build world. Please go into the right world!").color(NamedTextColor.DARK_RED)));
                     return false;
                 }
-                
+
                 FileConfiguration config = new YamlConfiguration();
                 Path dataFolder = Paths.get(BuildSystem.getInstance().getDataPath().toString(), names[1]);
                 if (Files.notExists(dataFolder)) Files.createDirectories(dataFolder);
@@ -155,7 +161,7 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
     private double parseCoordinate(double base, String input) {
         if (input.startsWith("~")) {
             if (input.length() == 1) {
-                return base; // ~ without offset
+                return base;
             }
             try {
                 return base + Double.parseDouble(input.substring(1));
@@ -170,10 +176,9 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
-        if (strings.length == 1) return List.of("add", "show", "hide");
+        if (strings.length == 1) return List.of("add", "show", "hide", "default");
 
         if (strings[0].equals("add")) {
             if (strings.length == 2 && strings[1].isBlank()) return List.of("<key>");

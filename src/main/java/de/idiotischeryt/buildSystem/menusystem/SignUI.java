@@ -1,21 +1,17 @@
 package de.idiotischeryt.buildSystem.menusystem;
 
-import de.idiotischeryt.buildSystem.BuildManager;
 import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
+import de.idiotischeryt.buildSystem.menusystem.menu.WorldSettingsMenu;
 import de.rapha149.signgui.SignGUI;
 import de.rapha149.signgui.SignGUIAction;
 import org.bukkit.*;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.bukkit.Bukkit.getServer;
 
@@ -43,7 +39,7 @@ public class SignUI extends PaginatedMenu {
                     .setLine(0, "--------------")
                     .setHandler((player, signGUIResult) -> {
                         String input = signGUIResult.getLines()[1];
-                        List<String> filteredWorlds = searchInput(input, WorldManagementMenu.worlds);
+                        List<String> filteredWorlds = searchInput(input, WorldManagementMenu.getWorlds());
 
                         return List.of(SignGUIAction.runSync(BuildSystem.getInstance(), () -> {
 
@@ -162,67 +158,7 @@ public class SignUI extends PaginatedMenu {
                 world = Bukkit.getWorld(e.getCurrentItem().getItemMeta().getDisplayName());
             }
 
-            Menu menu = new Menu(playerMenuUtility) {
-                @Contract(pure = true)
-                @Override
-                public @NotNull String getMenuName() {
-                    return "Settings";
-                }
-
-                @Override
-                public int getSlots() {
-                    return 9 * 3;
-                }
-
-                @Override
-                public void handleMenu(@NotNull InventoryClickEvent e) {
-                    if (e.getCurrentItem() == null) return;
-
-                    if (e.getCurrentItem().getType() == Material.ENDER_PEARL) {
-                        playerMenuUtility.getOwner().teleport(world.getSpawnLocation());
-                    } else if (e.getCurrentItem().getType() == Material.RED_STAINED_GLASS_PANE) {
-
-                        assert world != null;
-                        BuildManager.delete(world);
-                    }
-                }
-
-                @Override
-                public void setMenuItems() {
-                    String[] strings = BuildManager.namesByWorld(world);
-
-                    String mapName = strings[0];
-                    String minigameName = strings[1];
-
-                    if (BuildSystem.getConfiguration().isConfigurationSection(minigameName + "." + world.getName())) {
-                        ConfigurationSection section = BuildSystem.getConfiguration().getConfigurationSection(minigameName + "." + world.getName());
-                        if (section != null) {
-                            Map<String, Object> stats = section.getValues(false);
-
-                            List<String> statsList = new ArrayList<>();
-
-                            statsList.add(ChatColor.GOLD + "mapName: " + ChatColor.WHITE + mapName);
-
-                            statsList.add(ChatColor.GOLD + "templateName: " + ChatColor.WHITE + minigameName);
-
-                            stats.forEach((key, value) -> statsList.add(ChatColor.GOLD + key + ": " + ChatColor.WHITE + value));
-
-                            inventory.setItem(13, makeItem(Material.PAPER, ChatColor.AQUA + "Stats", statsList.toArray(new String[0])));
-                        } else {
-                            inventory.setItem(13, makeItem(Material.PAPER, ChatColor.AQUA + "Stats", "nothing to show,", "please reopen", "the menu!"));
-                        }
-                    } else {
-                        inventory.setItem(13, makeItem(Material.PAPER, ChatColor.AQUA + "Stats", "nothing to show,", "please reopen", "the menu!"));
-                    }
-
-
-                    inventory.setItem(11, makeItem(Material.RED_STAINED_GLASS_PANE, ChatColor.RED + "Delete"));
-
-                    inventory.setItem(15, makeItem(Material.ENDER_PEARL, ChatColor.GREEN + "Teleport"));
-
-                    setFillerGlass();
-                }
-            };
+            Menu menu = new WorldSettingsMenu(playerMenuUtility, world);
 
             menu.open();
         }
@@ -233,7 +169,7 @@ public class SignUI extends PaginatedMenu {
     @Override
     public void handleClose(InventoryCloseEvent e) {
         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
-        
+
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
             new WorldManagementMenu(playerMenuUtility).open();
         });
