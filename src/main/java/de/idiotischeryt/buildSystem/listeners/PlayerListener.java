@@ -33,7 +33,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSwitch(PlayerTeleportEvent e) {
-        if (!e.getFrom().getWorld().getName().equals(e.getTo().getWorld().getName())) {
+        if (!e.getFrom().getWorld().equals(e.getTo().getWorld())) {
             Location from = e.getFrom();
             Player p = e.getPlayer();
 
