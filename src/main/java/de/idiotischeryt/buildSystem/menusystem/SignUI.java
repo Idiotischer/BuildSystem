@@ -52,7 +52,7 @@ public class SignUI extends PaginatedMenu {
                                     }
                                 }
                             } else {
-                                inventory.addItem(makeItem(Material.BARRIER, ChatColor.RED + "No worlds found!"));
+                                inventory.addItem(makeItem(Material.BARRIER, ChatColor.RED + "No world(s) found!", false));
                             }
 
                             playerMenuUtility.getOwner().openInventory(inventory);

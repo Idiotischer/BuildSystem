@@ -144,9 +144,6 @@ public class WorldManagementMenu extends PaginatedMenu {
     public void setMenuItems() {
         addMenuBorder();
 
-
-        //The thing you will be looping through to place items
-        // Pagination loop template
         if (!getWorlds().isEmpty()) {
             for (int i = 0; i < getMaxItemsPerPage(); i++) {
                 index = getMaxItemsPerPage() * page + i;

@@ -32,6 +32,7 @@ import java.util.List;
 
 import static org.bukkit.Bukkit.getServer;
 
+//class is too long, please refactor
 public class BuildSettingsMenu extends Menu {
     String[] mapName = new String[]{""};
     String[] minigameName = new String[]{""};
