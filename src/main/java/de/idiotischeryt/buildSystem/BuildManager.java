@@ -158,7 +158,13 @@ public class BuildManager {
     public static String[] namesByWorld(World world) {
         String[] strings = world.getName().split("-");
 
-        if (strings.length != 2) return null;
+        if (strings.length != 2) {
+
+            String first = String.join("-", Arrays.copyOfRange(strings, 0, strings.length - 1));
+            String second = strings[strings.length - 1];
+
+            return new String[]{first, second};
+        }
 
         return strings;
 
@@ -181,7 +187,6 @@ public class BuildManager {
     public static void addToConfig(World world, String key, Object value) {
         String[] strings = namesByWorld(world);
 
-        assert strings != null;
         String mapName = strings[0];
         String minigameName = strings[1];
 
