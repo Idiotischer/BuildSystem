@@ -69,6 +69,9 @@ public class BuildManager {
                 }
         );
 
+        PlayerManager.deleteInventoryFor(world);
+        PlayerManager.deleteLocationFor(world);
+
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
             Bukkit.unloadWorld(world, false);
 
@@ -112,6 +115,7 @@ public class BuildManager {
             } catch (IOException | InvalidConfigurationException e) {
                 throw new RuntimeException(e);
             }
+
         });
     }
 

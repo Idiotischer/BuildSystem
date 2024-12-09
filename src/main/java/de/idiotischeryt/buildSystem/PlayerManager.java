@@ -131,4 +131,53 @@ public class PlayerManager {
         player.teleport(location);
     }
 
+    public static void deleteInventoryFor(World world) {
+        try {
+            BuildSystem.invConfiguration.load(BuildSystem.inventoryConfig.toFile());
+        } catch (IOException | InvalidConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+
+        for (String playerUUID : BuildSystem.invConfiguration.getKeys(false)) {
+            ConfigurationSection section1 = BuildSystem.invConfiguration.getConfigurationSection(playerUUID);
+            if (section1 != null) {
+                ConfigurationSection section2 = section1.getConfigurationSection(world.getName());
+                if (section2 != null) {
+                    section1.set(world.getName(), null);
+                }
+            }
+        }
+
+        try {
+            BuildSystem.invConfiguration.save(BuildSystem.inventoryConfig.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteLocationFor(World world) {
+        try {
+            BuildSystem.spawnConfiguration.load(BuildSystem.spawnConfig.toFile());
+        } catch (IOException | InvalidConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+
+        for (String playerUUID : BuildSystem.spawnConfiguration.getKeys(false)) {
+            ConfigurationSection section1 = BuildSystem.spawnConfiguration.getConfigurationSection(playerUUID);
+            if (section1 != null) {
+                ConfigurationSection section2 = section1.getConfigurationSection(world.getName());
+                if (section2 != null) {
+                    section1.set(world.getName(), null);
+                }
+            }
+        }
+
+        try {
+            BuildSystem.spawnConfiguration.save(BuildSystem.spawnConfig.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

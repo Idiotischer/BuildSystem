@@ -20,7 +20,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -35,20 +37,14 @@ public abstract class Menu implements InventoryHolder {
     public Inventory inventory;
     public ItemStack FILLER_GLASS = makeItem(Material.LIME_STAINED_GLASS_PANE, " ", false);
 
-    //Constructor for Menu. Pass in a PlayerMenuUtility so that
-    // we have information on who's menu this is and
-    // what info is to be transfered
     public Menu(PlayerMenuUtility playerMenuUtility) {
         Menu.playerMenuUtility = playerMenuUtility;
     }
 
-    //let each menu decide their name
     public abstract String getMenuName();
 
-    //let each menu decide their slot amount
     public abstract int getSlots();
 
-    //let each menu decide how the items in the menu will be handled when clicked
     public abstract void handleMenu(InventoryClickEvent e);
 
     public void handleClose(InventoryCloseEvent e) {
@@ -56,43 +52,40 @@ public abstract class Menu implements InventoryHolder {
         playerMenuUtility.lastMenu = this;
     }
 
-    //let each menu decide what items are to be placed in the inventory menu
     public abstract void setMenuItems();
 
-    //When called, an inventory is created and opened for the player
     public void open() {
-        //The owner of the inventory created is the Menu itself,
-        // so we are able to reverse engineer the Menu object from the
-        // inventoryHolder in the MenuListener class when handling clicks
         inventory = Bukkit.createInventory(this, getSlots(), getMenuName());
 
-        //grab all the items specified to be used for this menu and add to inventory
         this.setMenuItems();
 
-        //open the inventory for the player
         playerMenuUtility.getOwner().openInventory(inventory);
 
         playerMenuUtility.menu = this;
     }
+
+    private final Map<Integer, Boolean> animatedItems = new ConcurrentHashMap<>();
 
     public void animate(int slot, Material @NotNull [] mats, ItemStack toChange, int changeMaterialSpeed) {
         if (mats.length == 0) {
             throw new IllegalArgumentException("Material array cannot be empty");
         }
 
+        if (animatedItems.containsKey(slot) && animatedItems.get(slot)) {
+            return;
+        }
+
         AtomicInteger currentIndex = new AtomicInteger(0);
 
+        animatedItems.put(slot, true);
+
         Bukkit.getScheduler().runTaskTimer(BuildSystem.getInstance(), () -> {
-
             ItemStack itemStack = new ItemStack(mats[currentIndex.get()]);
-
             itemStack.setItemMeta(toChange.getItemMeta().clone());
-
             getInventory().setItem(slot, itemStack);
 
             currentIndex.set((currentIndex.get() + 1) % mats.length);
         }, 0, changeMaterialSpeed);
-
     }
 
     public void animateXChangeName(int slot, Material @NotNull [] mats, ItemStack toChange, int changeMaterialSpeed, String[] strings) {
@@ -103,8 +96,14 @@ public abstract class Menu implements InventoryHolder {
             throw new IllegalArgumentException("Strings array cannot be empty");
         }
 
+        if (animatedItems.containsKey(slot) && animatedItems.get(slot)) {
+            return;
+        }
+
         AtomicInteger currentIndex = new AtomicInteger(0);
         AtomicInteger currentIndex1 = new AtomicInteger(0);
+
+        animatedItems.put(slot, true);
 
         Bukkit.getScheduler().runTaskTimer(BuildSystem.getInstance(), () -> {
 

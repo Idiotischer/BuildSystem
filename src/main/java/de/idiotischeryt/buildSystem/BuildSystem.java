@@ -169,6 +169,7 @@ public final class BuildSystem extends JavaPlugin {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     public void defaultComment(File configFile, String comment) {

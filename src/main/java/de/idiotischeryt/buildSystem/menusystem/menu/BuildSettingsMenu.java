@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -120,6 +121,12 @@ public class BuildSettingsMenu extends Menu {
                 List<String> configSections = new ArrayList<>();
                 FileConfiguration config = BuildSystem.getInstance().getConfig();
 
+                try {
+                    config.load(Paths.get(BuildSystem.getInstance().getDataPath().toString(), "config.yml").toFile());
+                } catch (IOException | InvalidConfigurationException ex) {
+                    throw new RuntimeException(ex);
+                }
+
                 for (String section : config.getKeys(false)) {
                     if (config.isConfigurationSection(section)) {
                         configSections.add(section);
@@ -177,214 +184,34 @@ public class BuildSettingsMenu extends Menu {
                             .getPersistentDataContainer()
                             .has(new NamespacedKey(BuildSystem.getInstance(), "Empty_Object"))
             ) {
-                Menu menu = new Menu(
-                        BuildSystem.getPlayerMenuUtility(((Player) e.getWhoClicked()))
-                ) {
-                    @Override
-                    public String getMenuName() {
-                        return "Choose if the World is Empty";
-                    }
-
-                    @Override
-                    public int getSlots() {
-                        return 5 * 9;
-                    }
-
-                    @Override
-                    public void handleMenu(InventoryClickEvent e) {
-                        if (e.getClickedInventory() != inventory) return;
-
-                        e.setCancelled(true);
-
-                        if (e.getCurrentItem() == null) return;
-
-                        if (e.getCurrentItem()
-                                .getItemMeta()
-                                .getPersistentDataContainer()
-                                .has(new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object"))) {
-                            NamespacedKey key = new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object");
-
-                            ItemMeta meta = e.getCurrentItem().getItemMeta();
-                            PersistentDataContainer container = meta.getPersistentDataContainer();
-
-                            boolean on = Boolean.TRUE.equals(container.get(key, PersistentDataType.BOOLEAN));
-                            System.out.println("Boolean_Object before toggle: " + on);
-
-                            ItemStack stack;
-                            if (on) {
-                                stack = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-
-                                meta.setDisplayName(ChatColor.GOLD.toString() + ChatColor.BOLD + "False");
-
-                                meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, false);
-
-                                emptys = false;
-
-                                System.out.println("red");
-                            } else {
-                                stack = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-
-                                meta.setDisplayName(ChatColor.GOLD.toString() + ChatColor.BOLD + "True");
-
-                                meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
-
-                                emptys = true;
-
-                                System.out.println("lime");
-                            }
-
-                            stack.setItemMeta(meta);
-                            inventory.setItem(e.getSlot(), stack);
-                        }
-                    }
-
-                    @Override
-                    public void handleClose(InventoryCloseEvent e) {
-                        if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
-
-                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
-                    }
-
-                    @Override
-                    public void setMenuItems() {
-
-                        this.FILLER_GLASS = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", false);
-
-                        placeInMiddle(makeItem(Material.RED_STAINED_GLASS_PANE,
-                                ChatColor.GOLD.toString() + ChatColor.BOLD + "False",
-                                true,
-                                new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object"),
-                                false
-                        ));
-
-                        setFillerGlass();
-                    }
-                };
+                Menu menu = new BooleanMenu(
+                        playerMenuUtility,
+                        this,
+                        "Choose if the World is Empty",
+                        new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object"),
+                        false,
+                        value -> {
+                            System.out.println("Boolean_Object toggled to: " + value);
+                            emptys = value;
+                        });
 
                 menu.open();
             } else if (e.getCurrentItem()
                     .getPersistentDataContainer()
                     .has(new NamespacedKey(BuildSystem.getInstance(), "DaylightCycle_Object"))
             ) {
-                Menu menu = new Menu(
-                        BuildSystem.getPlayerMenuUtility(((Player) e.getWhoClicked()))
-                ) {
-                    @Override
-                    public String getMenuName() {
-                        return "Do daylight and/or weather change?";
-                    }
-
-                    @Override
-                    public int getSlots() {
-                        return 5 * 9;
-                    }
-
-                    @Override
-                    public void handleMenu(InventoryClickEvent e) {
-                        if (e.getClickedInventory() != inventory) return;
-
-                        e.setCancelled(true);
-
-                        if (e.getCurrentItem() == null) return;
-
-                        if (e.getCurrentItem()
-                                .getItemMeta()
-                                .getPersistentDataContainer()
-                                .has(new NamespacedKey(BuildSystem.getInstance(), "Boolean1_Object"))) {
-                            NamespacedKey key = new NamespacedKey(BuildSystem.getInstance(), "Boolean1_Object");
-
-                            ItemMeta meta = e.getCurrentItem().getItemMeta();
-                            PersistentDataContainer container = meta.getPersistentDataContainer();
-
-                            boolean on = Boolean.TRUE.equals(container.get(key, PersistentDataType.BOOLEAN));
-
-                            ItemStack stack;
-                            if (on) {
-                                stack = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-
-                                meta.setDisplayName(ChatColor.GOLD.toString() + ChatColor.BOLD + "DaylightCycle: False");
-
-                                meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, false);
-
-                                daylightCycles = false;
-
-                            } else {
-                                stack = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-
-                                meta.setDisplayName(ChatColor.GOLD.toString() + ChatColor.BOLD + "DaylightCycle: True");
-
-                                meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
-
-                                daylightCycles = true;
-                            }
-
-                            stack.setItemMeta(meta);
-                            inventory.setItem(e.getSlot(), stack);
-                        } else if (e.getCurrentItem()
-                                .getItemMeta()
-                                .getPersistentDataContainer()
-                                .has(new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object"))) {
-                            NamespacedKey key = new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object");
-
-                            ItemMeta meta = e.getCurrentItem().getItemMeta();
-                            PersistentDataContainer container = meta.getPersistentDataContainer();
-
-                            boolean on = Boolean.TRUE.equals(container.get(key, PersistentDataType.BOOLEAN));
-
-                            ItemStack stack;
-                            if (on) {
-                                stack = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-
-                                meta.setDisplayName(ChatColor.GOLD.toString() + ChatColor.BOLD + "WeatherCycle: False");
-
-                                meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, false);
-
-                                weatherCycles = false;
-
-                            } else {
-                                stack = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-
-                                meta.setDisplayName(ChatColor.GOLD.toString() + ChatColor.BOLD + "WeatherCycle: True");
-
-                                meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
-
-                                weatherCycles = true;
-                            }
-
-                            stack.setItemMeta(meta);
-                            inventory.setItem(e.getSlot(), stack);
+                Menu menu = new ToggleMenu(
+                        playerMenuUtility,
+                        this,
+                        new NamespacedKey(BuildSystem.getInstance(), "Boolean1_Object"),
+                        new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object"),
+                        value -> {
+                            emptys = value;
+                        },
+                        value1 -> {
+                            emptys = value1;
                         }
-                    }
-
-                    @Override
-                    public void handleClose(InventoryCloseEvent e) {
-                        if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
-
-                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
-                    }
-
-                    @Override
-                    public void setMenuItems() {
-
-                        this.FILLER_GLASS = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", false);
-
-                        inventory.setItem(21, makeItem(Material.RED_STAINED_GLASS_PANE,
-                                ChatColor.GOLD.toString() + ChatColor.BOLD + "DaylightCycle: False",
-                                true,
-                                new NamespacedKey(BuildSystem.getInstance(), "Boolean1_Object"),
-                                false
-                        ));
-
-                        inventory.setItem(23, makeItem(Material.RED_STAINED_GLASS_PANE,
-                                ChatColor.GOLD.toString() + ChatColor.BOLD + "WeatherCycle: False",
-                                true,
-                                new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object"),
-                                false
-                        ));
-
-                        setFillerGlass();
-                    }
-                };
+                );
 
                 menu.open();
             } else if (e.getCurrentItem()
@@ -601,6 +428,13 @@ public class BuildSettingsMenu extends Menu {
         inventory.setItem(inventory.getSize() - 1, playerHead);
     }
 
+    static List<Character> allowedChars = Arrays.asList(
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '/', '.', '_', '-'
+    );
+
     public void handleRename(Player p, Menu currentMenu, String label, String defaultText,
                              String[] map, List<String> needed, String errText, boolean contains) {
         AnvilGUI.Builder builder = new AnvilGUI.Builder();
@@ -614,6 +448,11 @@ public class BuildSettingsMenu extends Menu {
                     p.updateInventory();
                 })
                 .onClick((slot, state) -> {
+                    if (!isValid(state.getText())) return Arrays.asList(
+                            AnvilGUI.ResponseAction.replaceInputText(defaultText),
+                            AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Only [a-z0-9/._-] allowed!", true)
+                    );
+
                     if (contains) {
                         if (needed.contains(state.getText())) {
                             return Arrays.asList(
@@ -645,6 +484,15 @@ public class BuildSettingsMenu extends Menu {
                 });
 
         builder.open(p);
+    }
+
+    public static boolean isValid(String input) {
+        for (char c : input.toCharArray()) {
+            if (!allowedChars.contains(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void clear() {
