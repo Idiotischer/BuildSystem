@@ -154,7 +154,7 @@ public final class BuildSystem extends JavaPlugin {
         try {
             List<String> lines = new BufferedReader(new FileReader(configFile)).lines().toList();
 
-            boolean hasComment = !lines.isEmpty() && lines.get(0).startsWith("# Example Template:");
+            boolean hasComment = !lines.isEmpty() && lines.getFirst().startsWith("# Example Template:");
 
             if (!hasComment) {
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(configFile))) {
