@@ -5,6 +5,7 @@ import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
 import de.idiotischeryt.buildSystem.menusystem.menu.WorldSettingsMenu;
 import de.rapha149.signgui.SignGUI;
 import de.rapha149.signgui.SignGUIAction;
+import de.rapha149.signgui.exception.SignGUIVersionException;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -24,7 +25,7 @@ public class SignUI extends PaginatedMenu {
     }
 
     @Override
-    public void open() {
+    public void open() throws SignGUIVersionException {
         inventory = Bukkit.createInventory(this, getSlots(), getMenuName());
 
         this.setMenuItems();
@@ -138,13 +139,21 @@ public class SignUI extends PaginatedMenu {
                     p.sendMessage(ChatColor.GRAY + "You are already on the first page.");
                 } else {
                     page = page - 1;
-                    open();
+                    try {
+                        open();
+                    } catch (SignGUIVersionException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             } else if (ChatColor.stripColor(e.getCurrentItem().getItemMeta().getDisplayName()).equalsIgnoreCase("Right") &&
                     e.getCurrentItem().getPersistentDataContainer().has(new NamespacedKey(BuildSystem.getInstance(), "menuPart"))) {
                 if (!((index + 1) >= players.size())) {
                     page = page + 1;
-                    open();
+                    try {
+                        open();
+                    } catch (SignGUIVersionException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 } else {
                     p.sendMessage(ChatColor.GRAY + "You are on the last page.");
                 }
@@ -160,7 +169,11 @@ public class SignUI extends PaginatedMenu {
 
             Menu menu = new WorldSettingsMenu(playerMenuUtility, world);
 
-            menu.open();
+            try {
+                menu.open();
+            } catch (SignGUIVersionException ex) {
+                throw new RuntimeException(ex);
+            }
         }
 
     }
@@ -171,7 +184,11 @@ public class SignUI extends PaginatedMenu {
         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-            new WorldManagementMenu(playerMenuUtility).open();
+            try {
+                new WorldManagementMenu(playerMenuUtility).open();
+            } catch (SignGUIVersionException ex) {
+                throw new RuntimeException(ex);
+            }
         });
     }
 

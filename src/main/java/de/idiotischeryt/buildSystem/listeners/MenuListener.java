@@ -1,6 +1,7 @@
 package de.idiotischeryt.buildSystem.listeners;
 
 import de.idiotischeryt.buildSystem.menusystem.Menu;
+import de.rapha149.signgui.exception.SignGUIVersionException;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -29,7 +30,11 @@ public class MenuListener implements Listener {
             // the menu we clicked on
             Menu menu = (Menu) holder;
             //Call the handleMenu object which takes the event and processes it
-            menu.handleMenu(e);
+            try {
+                menu.handleMenu(e);
+            } catch (SignGUIVersionException ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 

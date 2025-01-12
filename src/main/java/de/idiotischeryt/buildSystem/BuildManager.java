@@ -27,7 +27,10 @@ import static org.bukkit.Bukkit.getServer;
 
 public class BuildManager {
     public static void createWorld(Player p, String mapName, String minigame, boolean empty, Biome biome, boolean spawnMobs, boolean dayNightCycle, boolean weatherCycle) throws IOException, InvalidConfigurationException {
-        YamlConfiguration configuration = (YamlConfiguration) BuildSystem.getInstance().getConfigManager().createConfig(mapName, minigame);
+
+        if (!minigame.trim().isEmpty()) {
+            YamlConfiguration configuration = (YamlConfiguration) BuildSystem.getInstance().getConfigManager().createConfig(mapName, minigame);
+        }
 
         World world = WorldCreator.createWorld(p, mapName, minigame, empty, spawnMobs, dayNightCycle, weatherCycle, biome);
 
@@ -167,7 +170,6 @@ public class BuildManager {
         }
 
         return strings;
-
     }
 
     public static String[] namesByString(String name) {

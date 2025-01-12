@@ -3,6 +3,7 @@ package de.idiotischeryt.buildSystem.menusystem;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.idiotischeryt.buildSystem.BuildSystem;
+import de.rapha149.signgui.exception.SignGUIVersionException;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -33,19 +34,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class Menu implements InventoryHolder {
 
     //Protected values that can be accessed in the menus
-    protected static PlayerMenuUtility playerMenuUtility;
+    protected PlayerMenuUtility playerMenuUtility;
     public Inventory inventory;
     public ItemStack FILLER_GLASS = makeItem(Material.LIME_STAINED_GLASS_PANE, " ", false);
 
     public Menu(PlayerMenuUtility playerMenuUtility) {
-        Menu.playerMenuUtility = playerMenuUtility;
+        this.playerMenuUtility = playerMenuUtility;
     }
 
     public abstract String getMenuName();
 
     public abstract int getSlots();
 
-    public abstract void handleMenu(InventoryClickEvent e);
+    public abstract void handleMenu(InventoryClickEvent e) throws SignGUIVersionException;
 
     public void handleClose(InventoryCloseEvent e) {
         playerMenuUtility.menu = null;
@@ -54,7 +55,7 @@ public abstract class Menu implements InventoryHolder {
 
     public abstract void setMenuItems();
 
-    public void open() {
+    public void open() throws SignGUIVersionException {
         inventory = Bukkit.createInventory(this, getSlots(), getMenuName());
 
         this.setMenuItems();

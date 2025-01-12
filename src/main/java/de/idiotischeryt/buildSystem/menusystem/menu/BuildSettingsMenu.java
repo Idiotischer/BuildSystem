@@ -4,6 +4,7 @@ import de.idiotischeryt.buildSystem.BuildManager;
 import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.menusystem.Menu;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
+import de.rapha149.signgui.exception.SignGUIVersionException;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -36,7 +37,7 @@ import static org.bukkit.Bukkit.getServer;
 //class is too long, please refactor
 public class BuildSettingsMenu extends Menu {
     String[] mapName = new String[]{""};
-    String[] minigameName = new String[]{""};
+    String[] template = new String[]{""};
     String[] biomeName = new String[]{"PLAINS"};
     boolean emptys = false;
     boolean daylightCycles = false;
@@ -81,7 +82,7 @@ public class BuildSettingsMenu extends Menu {
     }
 
     @Override
-    public void handleMenu(InventoryClickEvent e) {
+    public void handleMenu(InventoryClickEvent e) throws SignGUIVersionException {
 
         if (e.getClickedInventory() == inventory) {
 
@@ -133,7 +134,7 @@ public class BuildSettingsMenu extends Menu {
                     }
                 }
 
-                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Template name here", minigameName, configSections, ChatColor.RED + "That type doesn't exist!", false);
+                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Template name here", template, configSections, ChatColor.RED + "That type doesn't exist!", false);
             } else if (e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR && e.getCurrentItem()
                     .getPersistentDataContainer()
                     .has(new NamespacedKey(BuildSystem.getInstance(), "Biome_Object"))
@@ -144,11 +145,17 @@ public class BuildSettingsMenu extends Menu {
                         .text("Biome name here")
                         .itemLeft(makeItem(Material.NAME_TAG, "Rename me", false))
                         .onClose((state) -> {
-                            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
+                            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
+                                try {
+                                    current.open();
+                                } catch (SignGUIVersionException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                            });
                         })
                         .onClick((slot, state) -> {
-
                             String inputText = state.getText();
+
 
                             boolean isValidBiome = false;
                             for (Biome biome : Biome.values()) {
@@ -195,7 +202,11 @@ public class BuildSettingsMenu extends Menu {
                             emptys = value;
                         });
 
-                menu.open();
+                try {
+                    menu.open();
+                } catch (SignGUIVersionException ex) {
+                    throw new RuntimeException(ex);
+                }
             } else if (e.getCurrentItem()
                     .getPersistentDataContainer()
                     .has(new NamespacedKey(BuildSystem.getInstance(), "DaylightCycle_Object"))
@@ -278,7 +289,13 @@ public class BuildSettingsMenu extends Menu {
                     public void handleClose(InventoryCloseEvent e) {
                         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
-                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
+                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
+                            try {
+                                current.open();
+                            } catch (SignGUIVersionException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        });
                     }
 
                     @Override
@@ -301,13 +318,12 @@ public class BuildSettingsMenu extends Menu {
                 menu.open();
             } else if (e.getCurrentItem().getType().equals(Material.PLAYER_HEAD)) {
 
-                if (minigameName[0].trim().isEmpty()) return;
                 if (mapName[0].trim().isEmpty()) return;
 
                 try {
                     BuildManager.createWorld(playerMenuUtility.getOwner(),
                             mapName[0],
-                            minigameName[0],
+                            template[0],
                             emptys,
                             Biome.valueOf(biomeName[0].toUpperCase()),
                             spawnMobs,
@@ -331,7 +347,13 @@ public class BuildSettingsMenu extends Menu {
         if (e.getReason() == InventoryCloseEvent.Reason.UNKNOWN) return;
         if (e.getReason() == InventoryCloseEvent.Reason.TELEPORT) return;
 
-        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> new WorldManagementMenu(playerMenuUtility).open());
+        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
+            try {
+                new WorldManagementMenu(playerMenuUtility).open();
+            } catch (SignGUIVersionException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
 
         clear();
     }
@@ -444,7 +466,13 @@ public class BuildSettingsMenu extends Menu {
                 .text(defaultText)
                 .itemLeft(makeItem(Material.NAME_TAG, label, false))
                 .onClose(state -> {
-                    Bukkit.getScheduler().runTask(BuildSystem.getInstance(), currentMenu::open);
+                    Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
+                        try {
+                            currentMenu.open();
+                        } catch (SignGUIVersionException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
                     p.updateInventory();
                 })
                 .onClick((slot, state) -> {
@@ -497,7 +525,7 @@ public class BuildSettingsMenu extends Menu {
 
     public void clear() {
         mapName = new String[]{""};
-        minigameName = new String[]{""};
+        template = new String[]{""};
         biomeName = new String[]{"PLAINS"};
         emptys = false;
         daylightCycles = false;

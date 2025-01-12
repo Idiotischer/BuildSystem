@@ -4,6 +4,7 @@ import de.idiotischeryt.buildSystem.BuildManager;
 import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.LocationViewer;
 import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
+import de.rapha149.signgui.exception.SignGUIVersionException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
@@ -144,7 +145,11 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
             }
         } else if (args.length == 0) {
             if (!(commandSender instanceof Player p)) return false;
-            new WorldManagementMenu(BuildSystem.getPlayerMenuUtility(p)).open();
+            try {
+                new WorldManagementMenu(BuildSystem.getPlayerMenuUtility(p)).open();
+            } catch (SignGUIVersionException e) {
+                throw new RuntimeException(e);
+            }
             return true;
         }
 

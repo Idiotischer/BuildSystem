@@ -4,5 +4,3 @@ main: de.idiotischeryt.buildSystem.BuildSystem
 api-version: '1.21'
 commands:
   build:
-softdepend:
-  - ProtocolLib

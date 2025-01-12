@@ -4,6 +4,7 @@ import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.menusystem.PaginatedMenu;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
 import de.idiotischeryt.buildSystem.menusystem.SignUI;
+import de.rapha149.signgui.exception.SignGUIVersionException;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -20,7 +21,6 @@ import java.util.Objects;
 import static org.bukkit.Bukkit.getServer;
 
 public class WorldManagementMenu extends PaginatedMenu {
-
 
     public WorldManagementMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
@@ -77,7 +77,7 @@ public class WorldManagementMenu extends PaginatedMenu {
     }
 
     @Override
-    public void handleMenu(@NotNull InventoryClickEvent e) {
+    public void handleMenu(@NotNull InventoryClickEvent e) throws SignGUIVersionException {
         Player p = (Player) e.getWhoClicked();
 
         ArrayList<Player> players = new ArrayList<>(getServer().getOnlinePlayers());

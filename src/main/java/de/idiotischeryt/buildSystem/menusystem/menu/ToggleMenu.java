@@ -3,6 +3,7 @@ package de.idiotischeryt.buildSystem.menusystem.menu;
 import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.menusystem.Menu;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
+import de.rapha149.signgui.exception.SignGUIVersionException;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -96,7 +97,13 @@ public class ToggleMenu extends Menu {
     public void handleClose(InventoryCloseEvent e) {
         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
-        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), menu::open);
+        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
+            try {
+                menu.open();
+            } catch (SignGUIVersionException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
 
     @Override
