@@ -5,6 +5,7 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.IOException;
@@ -127,8 +128,7 @@ public class PlayerManager {
 
         Location location = new Location(world, x, y, z, yaw, pitch);
 
-
-        player.teleport(location);
+        player.teleport(location, PlayerTeleportEvent.TeleportCause.PLUGIN);
     }
 
     public static void deleteInventoryFor(World world) {

@@ -15,6 +15,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -27,6 +28,7 @@ import static org.bukkit.Bukkit.getServer;
 
 public class BuildManager {
     public static void createWorld(Player p, String mapName, String minigame, boolean empty, Biome biome, boolean spawnMobs, boolean dayNightCycle, boolean weatherCycle) throws IOException, InvalidConfigurationException {
+        if (!p.hasPermission("buildsystem.permission.create") || !p.isOp()) return;
 
         if (!minigame.trim().isEmpty()) {
             YamlConfiguration configuration = (YamlConfiguration) BuildSystem.getInstance().getConfigManager().createConfig(mapName, minigame);
@@ -54,10 +56,21 @@ public class BuildManager {
         BuildSystem.configuration.save(BuildSystem.getInstance().registryPath.toFile());
     }
 
-    public static void delete(@NotNull World world) {
+    public static void delete(@NotNull World world, Player deleter) {
+        if (!deleter.hasPermission("buildsystem.permission.delete") || !deleter.isOp()) {
+            deleter.sendMessage(
+                    Component.text("You don't have the permissions needed!")
+                            .color(NamedTextColor.DARK_RED)
+                            .decorate(TextDecoration.BOLD)
+            );
+
+            return;
+        }
+
         world.getPlayers().forEach(player -> {
                     player.teleport(
-                            Objects.requireNonNull(getServer().getWorlds().getFirst()).getSpawnLocation()
+                            Objects.requireNonNull(getServer().getWorlds().getFirst()).getSpawnLocation(),
+                            PlayerTeleportEvent.TeleportCause.PLUGIN
                     );
                     player.showTitle(Title.title(
                             Component.text("World is getting")
@@ -142,14 +155,24 @@ public class BuildManager {
                 value = map;
             }
 
-            List<Object> contents = (List<Object>) config.getList(key);
-            if (contents == null) {
-                contents = new ArrayList<>();
-            }
+            Object existingValue = config.get(key);
 
-            if (!contents.contains(value)) {
-                contents.add(value);
-                config.set(key, contents);
+            if (existingValue == null) {
+                config.set(key, value);
+            } else if (existingValue instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Object> list = (List<Object>) existingValue;
+                if (!list.contains(value)) {
+                    list.add(value);
+                    config.set(key, list);
+                }
+            } else {
+                List<Object> list = new ArrayList<>();
+                list.add(existingValue);
+                if (!list.contains(value)) {
+                    list.add(value);
+                }
+                config.set(key, list);
             }
 
             config.save(ymlPath.toFile());
@@ -157,6 +180,7 @@ public class BuildManager {
             throw new RuntimeException(e);
         }
     }
+
 
     public static String[] namesByWorld(World world) {
         String[] strings = world.getName().split("-");

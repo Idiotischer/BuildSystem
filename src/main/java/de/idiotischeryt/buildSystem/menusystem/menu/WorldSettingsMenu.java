@@ -8,6 +8,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +47,7 @@ public class WorldSettingsMenu extends Menu {
         } else if (e.getCurrentItem().getType() == Material.RED_STAINED_GLASS_PANE) {
 
             assert world != null;
-            BuildManager.delete(world);
+            BuildManager.delete(world, (Player) e.getWhoClicked());
         }
     }
 

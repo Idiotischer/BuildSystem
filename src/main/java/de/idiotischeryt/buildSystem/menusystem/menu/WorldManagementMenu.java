@@ -77,6 +77,12 @@ public class WorldManagementMenu extends PaginatedMenu {
     }
 
     @Override
+    public void open() throws SignGUIVersionException {
+        if (playerMenuUtility.getOwner().hasPermission("buildsystem.permission.openMenu") || playerMenuUtility.getOwner().isOp())
+            super.open();
+    }
+
+    @Override
     public void handleMenu(@NotNull InventoryClickEvent e) throws SignGUIVersionException {
         Player p = (Player) e.getWhoClicked();
 

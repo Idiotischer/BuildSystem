@@ -6,15 +6,20 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.*;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onLeave(PlayerQuitEvent e) {
+        Player player = e.getPlayer();
+
+        PlayerManager.saveInventory(player);
+        PlayerManager.saveLocation(player, player.getLocation());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onLKick(PlayerKickEvent e) {
         Player player = e.getPlayer();
 
         PlayerManager.saveInventory(player);
@@ -33,12 +38,12 @@ public class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSwitch(PlayerTeleportEvent e) {
-        if (!e.getFrom().getWorld().equals(e.getTo().getWorld())) {
+        Player player = e.getPlayer();
+
+        if (!e.getFrom().getWorld().equals(e.getTo().getWorld()) && e.getCause() == PlayerTeleportEvent.TeleportCause.PLUGIN) {
             Location from = e.getFrom();
-            Player p = e.getPlayer();
 
-            PlayerManager.saveLocation(p, from);
-
+            PlayerManager.saveLocation(player, from);
         }
     }
 
@@ -53,6 +58,7 @@ public class PlayerListener implements Listener {
 
         PlayerManager.loadInventory(p);
 
-        PlayerManager.loadLocation(p);
+        if (e.getPlayer().getLocation().getNearbyEntitiesByType(Player.class, 1).isEmpty())
+            PlayerManager.loadLocation(p);
     }
 }
