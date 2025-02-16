@@ -18,8 +18,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import static org.bukkit.Bukkit.getServer;
-
 public class WorldManagementMenu extends PaginatedMenu {
 
     public WorldManagementMenu(PlayerMenuUtility playerMenuUtility) {
@@ -86,7 +84,7 @@ public class WorldManagementMenu extends PaginatedMenu {
     public void handleMenu(@NotNull InventoryClickEvent e) throws SignGUIVersionException {
         Player p = (Player) e.getWhoClicked();
 
-        ArrayList<Player> players = new ArrayList<>(getServer().getOnlinePlayers());
+        ArrayList<String> worlds = getWorlds();
 
         if (playerMenuUtility.getOwner() != p) return;
 
@@ -118,19 +116,15 @@ public class WorldManagementMenu extends PaginatedMenu {
         } else if (e.getCurrentItem().getType().equals(Material.DARK_OAK_BUTTON) &&
                 e.getCurrentItem().getPersistentDataContainer().has(new NamespacedKey(BuildSystem.getInstance(), "menuPart"))) {
             if (ChatColor.stripColor(e.getCurrentItem().getItemMeta().getDisplayName()).equalsIgnoreCase("Left")) {
-                if (page == 0) {
-                    p.sendMessage(ChatColor.GRAY + "You are already on the first page.");
-                } else {
+                if (page > 0) {
                     page = page - 1;
                     super.open();
                 }
             } else if (ChatColor.stripColor(e.getCurrentItem().getItemMeta().getDisplayName()).equalsIgnoreCase("Right") &&
                     e.getCurrentItem().getPersistentDataContainer().has(new NamespacedKey(BuildSystem.getInstance(), "menuPart"))) {
-                if (!((index + 1) >= players.size())) {
+                if (!((index + 1) >= worlds.size())) {
                     page = page + 1;
                     super.open();
-                } else {
-                    p.sendMessage(ChatColor.GRAY + "You are on the last page.");
                 }
             }
         }

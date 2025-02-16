@@ -175,7 +175,6 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                     float pitch = args.length >= 6 ? Float.parseFloat(args[5]) : target.getLocation().getPitch();
 
                     target.teleport(new Location(target.getWorld(), x, y, z, yaw, pitch));
-                    commandSender.sendMessage(ChatColor.GREEN + "Teleported to " + x + ", " + y + ", " + z + " (Yaw: " + yaw + ", Pitch: " + pitch + ")");
                 } catch (NumberFormatException e) {
                     commandSender.sendMessage(ChatColor.RED + "Invalid coordinates or rotation values!");
                 }
@@ -193,7 +192,6 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                     float pitch = args.length >= 7 ? Float.parseFloat(args[6]) : targetPlayer.getLocation().getPitch();
 
                     targetPlayer.teleport(new Location(targetPlayer.getWorld(), x, y, z, yaw, pitch));
-                    commandSender.sendMessage(ChatColor.GREEN + "Teleported " + targetPlayer.getName() + " to " + x + ", " + y + ", " + z + " (Yaw: " + yaw + ", Pitch: " + pitch + ")");
                 } catch (NumberFormatException e) {
                     commandSender.sendMessage(ChatColor.RED + "Invalid coordinates or rotation values!");
                 }
@@ -211,7 +209,6 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                     float pitch = args.length >= 8 ? Float.parseFloat(args[6]) : target.getLocation().getPitch();
 
                     target.teleport(new Location(world, x, y, z, yaw, pitch));
-                    commandSender.sendMessage(ChatColor.GREEN + "Teleported to world " + world.getName() + " at " + x + ", " + y + ", " + z + " (Yaw: " + yaw + ", Pitch: " + pitch + ")");
                 } catch (NumberFormatException e) {
                     commandSender.sendMessage(ChatColor.RED + "Invalid coordinates or rotation values!");
                 }
