@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class Menu implements InventoryHolder {
 
-    //Protected values that can be accessed in the menus
     protected PlayerMenuUtility playerMenuUtility;
     public Inventory inventory;
     public ItemStack FILLER_GLASS = makeItem(Material.LIME_STAINED_GLASS_PANE, " ", false);
@@ -56,14 +55,16 @@ public abstract class Menu implements InventoryHolder {
     public abstract void setMenuItems();
 
     public void open() throws SignGUIVersionException {
-        inventory = Bukkit.createInventory(this, getSlots(), getMenuName());
+        if (inventory == null) {
+            inventory = Bukkit.createInventory(this, getSlots(), getMenuName());
+        }
 
         this.setMenuItems();
 
         playerMenuUtility.getOwner().openInventory(inventory);
-
         playerMenuUtility.menu = this;
     }
+
 
     private final Map<Integer, Boolean> animatedItems = new ConcurrentHashMap<>();
 
@@ -156,12 +157,12 @@ public abstract class Menu implements InventoryHolder {
     }
 
 
-    public static @NotNull ItemStack makeItem(Material material, String displayName, boolean menuPart, NamespacedKey k, String... lore) {
+    public @NotNull ItemStack makeItem(Material material, String displayName, boolean menuPart, NamespacedKey k, String... lore) {
 
         return makeItem(material, displayName, menuPart, k, true, lore);
     }
 
-    public static @NotNull ItemStack makeItem(Material material, String displayName, boolean menuPart, NamespacedKey k, boolean standard, String... lore) {
+    public @NotNull ItemStack makeItem(Material material, String displayName, boolean menuPart, NamespacedKey k, boolean standard, String... lore) {
 
         ItemStack item = new ItemStack(material);
         ItemMeta itemMeta = item.getItemMeta();
@@ -183,7 +184,7 @@ public abstract class Menu implements InventoryHolder {
         return item;
     }
 
-    public static ItemStack makeItem(Material material, String displayName, boolean menuPart, String... lore) {
+    public ItemStack makeItem(Material material, String displayName, boolean menuPart, String... lore) {
 
         ItemStack item = new ItemStack(material);
         ItemMeta itemMeta = item.getItemMeta();

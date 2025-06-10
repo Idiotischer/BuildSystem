@@ -3,6 +3,7 @@ package de.idiotischeryt.buildSystem.command;
 import de.idiotischeryt.buildSystem.BuildManager;
 import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.LocationViewer;
+import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
 import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
 import de.rapha149.signgui.exception.SignGUIVersionException;
 import net.kyori.adventure.text.Component;
@@ -11,7 +12,6 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -24,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -133,6 +135,9 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
+            if (!commandSender.hasPermission("buildsystem.permission.teleport") || !commandSender.isOp())
+                return false;
+
             Player target = commandSender instanceof Player ? (Player) commandSender : null;
 
             if (args.length >= 2) {
@@ -166,7 +171,7 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                 }
                 targetPlayer.teleport(destinationPlayer.getLocation());
                 commandSender.sendMessage(ChatColor.GREEN + targetPlayer.getName() + " teleported to " + destinationPlayer.getName() + "!");
-            } else if (args.length >= 4) {
+            } else {
                 try {
                     double x = Double.parseDouble(args[1]);
                     double y = Double.parseDouble(args[2]);
@@ -174,46 +179,16 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                     float yaw = args.length >= 5 ? Float.parseFloat(args[4]) : target.getLocation().getYaw();
                     float pitch = args.length >= 6 ? Float.parseFloat(args[5]) : target.getLocation().getPitch();
 
+                    if (y < 0 || y > 256) {
+                        commandSender.sendMessage(ChatColor.RED + "Y coordinate is out of bounds (0-256).");
+                        return true;
+                    }
+
                     target.teleport(new Location(target.getWorld(), x, y, z, yaw, pitch));
+                    commandSender.sendMessage(ChatColor.GREEN + "Teleported to the specified coordinates!");
                 } catch (NumberFormatException e) {
-                    commandSender.sendMessage(ChatColor.RED + "Invalid coordinates or rotation values!");
+                    commandSender.sendMessage(ChatColor.RED + "Invalid coordinates or rotation values! Please ensure all numbers are valid.");
                 }
-            } else if (args.length >= 5) {
-                Player targetPlayer = Bukkit.getPlayer(args[1]);
-                if (targetPlayer == null) {
-                    commandSender.sendMessage(ChatColor.RED + "Target player not found.");
-                    return true;
-                }
-                try {
-                    double x = Double.parseDouble(args[2]);
-                    double y = Double.parseDouble(args[3]);
-                    double z = Double.parseDouble(args[4]);
-                    float yaw = args.length >= 6 ? Float.parseFloat(args[5]) : targetPlayer.getLocation().getYaw();
-                    float pitch = args.length >= 7 ? Float.parseFloat(args[6]) : targetPlayer.getLocation().getPitch();
-
-                    targetPlayer.teleport(new Location(targetPlayer.getWorld(), x, y, z, yaw, pitch));
-                } catch (NumberFormatException e) {
-                    commandSender.sendMessage(ChatColor.RED + "Invalid coordinates or rotation values!");
-                }
-            } else if (args.length >= 6) {
-                World world = Bukkit.getWorld(args[1]);
-                if (world == null) {
-                    commandSender.sendMessage(ChatColor.RED + "World not found. Using player's current world instead.");
-                    world = target.getWorld();
-                }
-                try {
-                    double x = Double.parseDouble(args[2]);
-                    double y = Double.parseDouble(args[3]);
-                    double z = Double.parseDouble(args[4]);
-                    float yaw = args.length >= 7 ? Float.parseFloat(args[5]) : target.getLocation().getYaw();
-                    float pitch = args.length >= 8 ? Float.parseFloat(args[6]) : target.getLocation().getPitch();
-
-                    target.teleport(new Location(world, x, y, z, yaw, pitch));
-                } catch (NumberFormatException e) {
-                    commandSender.sendMessage(ChatColor.RED + "Invalid coordinates or rotation values!");
-                }
-            } else {
-                commandSender.sendMessage(ChatColor.RED + "Invalid teleport command usage.");
             }
         } else if (args.length > 0 && args[0].equals("show")) {
             if (args.length < 2) {
@@ -260,41 +235,46 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
             }
         } else if (args.length == 0) {
             if (!(commandSender instanceof Player p)) return false;
-            try {
-                new WorldManagementMenu(BuildSystem.getPlayerMenuUtility(p)).open();
-            } catch (SignGUIVersionException e) {
-                throw new RuntimeException(e);
+
+            if (!p.hasPermission("buildsystem.permission.openmenu") && !p.isOp()) {
+                p.sendMessage(ChatColor.RED + "You do not have permission to open this menu!");
+                return true;
             }
+
+            WorldManagementMenu menu = new WorldManagementMenu(new PlayerMenuUtility(p));
+            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
+                try {
+                    menu.open();
+                } catch (SignGUIVersionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
             return true;
         }
 
         return true;
     }
 
-    /**
-     * Parses a coordinate, supporting relative (~) values.
-     *
-     * @param base  The base value (e.g., player's current position).
-     * @param input The input string to parse.
-     * @return The parsed coordinate as a double.
-     */
-    private double parseCoordinate(double base, String input) {
-        if (input.startsWith("~")) {
-            if (input.length() == 1) {
-                return base;
-            }
-            try {
-                return base + Double.parseDouble(input.substring(1));
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid relative coordinate: " + input);
-            }
+    private double parseCoordinate(double currentCoordinate, String value) {
+        if (value.equals("~")) {
+            return roundToThreeDecimals(currentCoordinate);
         }
+
         try {
-            return Double.parseDouble(input);
+            double parsedValue = Double.parseDouble(value);
+            return roundToThreeDecimals(parsedValue);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid coordinate: " + input);
+            return roundToThreeDecimals(currentCoordinate);
         }
     }
+
+    private double roundToThreeDecimals(double value) {
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(3, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
+
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {

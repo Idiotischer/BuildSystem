@@ -8,11 +8,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +37,7 @@ public class WorldSettingsMenu extends Menu {
 
     @Override
     public int getSlots() {
-        return 9 * 3;
+        return 9 * 5;
     }
 
     @Override
@@ -48,6 +50,8 @@ public class WorldSettingsMenu extends Menu {
 
             assert world != null;
             BuildManager.delete(world, (Player) e.getWhoClicked());
+        } else if (e.getCurrentItem().getType() == Material.NETHERITE_SCRAP) {
+            BuildManager.copy(world, (Player) e.getWhoClicked());
         }
     }
 
@@ -58,8 +62,17 @@ public class WorldSettingsMenu extends Menu {
         String mapName = strings[0];
         String minigameName = strings[1];
 
-        if (BuildSystem.getConfiguration().isConfigurationSection(minigameName + "." + world.getName())) {
-            ConfigurationSection section = BuildSystem.getConfiguration().getConfigurationSection(minigameName + "." + world.getName());
+        try {
+            BuildSystem.getConfiguration().load(BuildSystem.getInstance().registryPath.toFile());
+        } catch (IOException | InvalidConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        ConfigurationSection sec = BuildSystem.getConfiguration().getConfigurationSection(minigameName);
+
+        if (sec.isConfigurationSection(mapName)) {
+            ConfigurationSection section = sec.getConfigurationSection(mapName);
             if (section != null) {
 
                 Map<String, Object> stats = section.getValues(false);
@@ -79,6 +92,29 @@ public class WorldSettingsMenu extends Menu {
                 inventory.setItem(13, makeItem(Material.PAPER, ChatColor.AQUA + "Stats", "nothing to show,", "please reopen", "the menu!"));
 
             }
+        } else if (sec.isConfigurationSection(world.getName())) {
+            ConfigurationSection section = sec.getConfigurationSection(minigameName + "." + world.getName());
+            if (section != null) {
+
+                Map<String, Object> stats = section.getValues(false);
+
+                List<String> statsList = new ArrayList<>();
+
+                statsList.add(ChatColor.GOLD + "mapName: " + ChatColor.WHITE + mapName);
+
+                statsList.add(ChatColor.GOLD + "templateName: " + ChatColor.WHITE + minigameName);
+
+                stats.forEach((key, value) -> statsList.add(ChatColor.GOLD + key + ": " + ChatColor.WHITE + value));
+
+                inventory.setItem(13, makeItem(Material.PAPER, ChatColor.AQUA + "Stats", statsList.toArray(new String[0])));
+
+            } else {
+                System.out.println(minigameName + "." + world.getName());
+                System.out.println(minigameName + "." + mapName);
+
+                inventory.setItem(13, makeItem(Material.PAPER, ChatColor.AQUA + "Stats", "nothing to show,", "please reopen", "the menu!"));
+
+            }
         } else {
             inventory.setItem(13, makeItem(Material.PAPER, ChatColor.AQUA + "Stats", "nothing to show,", "please reopen", "the menu!"));
         }
@@ -87,6 +123,10 @@ public class WorldSettingsMenu extends Menu {
         inventory.setItem(11, makeItem(Material.RED_STAINED_GLASS_PANE, ChatColor.RED + "Delete"));
 
         inventory.setItem(15, makeItem(Material.ENDER_PEARL, ChatColor.GREEN + "Teleport"));
+
+        inventory.setItem(29, makeItem(Material.NETHERITE_SCRAP, ChatColor.YELLOW + "Copy"));
+        inventory.setItem(31, makeItem(Material.BARRIER, ChatColor.RED + "Coming Soon..."));
+        inventory.setItem(33, makeItem(Material.BARRIER, ChatColor.RED + "Coming Soon..."));
 
         setFillerGlass();
     }

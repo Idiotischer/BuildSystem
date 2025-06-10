@@ -47,6 +47,7 @@ public class WorldCreator {
             creator.generateStructures(false);
 
             World world = creator.createWorld();
+            world.setTime(1000);
 
             world.getBlockAt(0, 64, 0).setType(Material.BEDROCK);
 
@@ -74,11 +75,14 @@ public class WorldCreator {
 
         String lowerCase = Objects.requireNonNullElse(biome, Biome.PLAINS).toString().toLowerCase();
 
-        creator.generatorSettings("{\"biome\":\"minecraft:" + lowerCase + "\",\"layers\":[{\"block\":\"minecraft:bedrock\",\"height\":1},{\"block\":\"minecraft:dirt\",\"height\":2},{\"block\":\"minecraft:grass_block\",\"height\":1},{\"block\":\"minecraft:air\",\"height\":300}]}");
+        creator.generatorSettings("{\"biome\":\"minecraft:" + lowerCase + "\",\"layers\":[{\"block\":\"minecraft:bedrock\",\"height\":1},{\"block\":\"minecraft:dirt\",\"height\":127},{\"block\":\"minecraft:grass_block\",\"height\":1}]}");
 
         creator.generateStructures(false);
 
         World world = creator.createWorld();
+        world.setTime(1000);
+
+        world.setSpawnLocation(0, 65, 0);
 
         if (world == null) {
             BuildSystem.sendError("Map not found:", worldName, "");

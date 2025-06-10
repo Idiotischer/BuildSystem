@@ -2,6 +2,7 @@ package de.idiotischeryt.buildSystem;
 
 import de.idiotischeryt.buildSystem.command.BuildCommand;
 import de.idiotischeryt.buildSystem.gui.InventoryUI;
+import de.idiotischeryt.buildSystem.listeners.CMDListener;
 import de.idiotischeryt.buildSystem.listeners.MenuListener;
 import de.idiotischeryt.buildSystem.listeners.PlayerListener;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
@@ -9,6 +10,7 @@ import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.WorldCreator;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -21,16 +23,17 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
+//TODO: use only nio, its currently too messy with the old io stuff AND add default world i nthe menu (world, world_end, world_nether, etc)
+//TODO: add import world feature
 public final class BuildSystem extends JavaPlugin {
     static BuildSystem inst = null;
     ConfigManager configManager = null;
     private final List<String> configSection = new ArrayList<>();
     static FileConfiguration configuration = new YamlConfiguration();
     public Path registryPath = null;
+    public Path propertiesPath = null;
 
     public static Path worldFolder = null;
 
@@ -46,6 +49,8 @@ public final class BuildSystem extends JavaPlugin {
 
     private static InventoryUI ui = null;
 
+    LocationViewer viewer;
+
     private final static Component PREFIX =
             Component.text("[")
                     .color(NamedTextColor.YELLOW)
@@ -53,6 +58,7 @@ public final class BuildSystem extends JavaPlugin {
                             .color(NamedTextColor.RED))
                     .append(Component.text("]")
                             .color(NamedTextColor.YELLOW));
+    public FileConfiguration propertiesConfig = new YamlConfiguration();
 
     public static @NotNull Component sendError(String start, String error, String end) {
         return PREFIX
@@ -68,17 +74,32 @@ public final class BuildSystem extends JavaPlugin {
     public void onEnable() {
         inst = this;
 
-        new LocationViewer();
+        File configFile = new File(this.getDataFolder(), "config.yml");
+
+        if (!this.getDataFolder().exists()) {
+            this.getDataFolder().mkdirs();
+            if(!configFile.exists()) {
+                try {
+                    configFile.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        this.saveDefaultConfig();
+
+        viewer = new LocationViewer();
 
         ui = new InventoryUI();
 
         defaultComment();
 
-        saveDefaultConfig();
-
         loop();
 
         getCommand("build").setExecutor(new BuildCommand());
+
+        getServer().getPluginManager().registerEvents(new CMDListener(), this);
 
         getServer().getPluginManager().registerEvents(ui, this);
 
@@ -98,11 +119,10 @@ public final class BuildSystem extends JavaPlugin {
             if (Files.notExists(spawnConfig)) {
                 Files.createFile(spawnConfig);
 
-                defaultComment(spawnConfig.toFile(), "Here, all player spawnlocaions are saved!");
+                defaultComment(spawnConfig.toFile(), "Here, all player spawnlocations are saved!");
 
                 spawnConfiguration.save(spawnConfig.toFile());
             }
-
 
             inventoryConfig = Paths.get(worldFolder.toString(), "playerinvs.yml");
 
@@ -122,18 +142,62 @@ public final class BuildSystem extends JavaPlugin {
 
             configuration.load(registryPath.toFile());
 
+            if (!configuration.contains("Other")) {
+                configuration.set("Other", Collections.emptyList());
+            }
+
             configuration.save(registryPath.toFile());
+
+            propertiesPath = Paths.get(this.getDataPath().toString(), "properties.yml");
+
+            if (Files.notExists(propertiesPath)) {
+                Files.createFile(propertiesPath);
+            }
+
+            propertiesConfig.load(propertiesPath.toFile());
+
+            if (!propertiesConfig.contains("saveAndLoadPlayerInventory")) {
+                propertiesConfig.set("saveAndLoadPlayerInventory", true);
+            }
+
+            if (!propertiesConfig.contains("saveAndLoadPlayerLocation")) {
+                propertiesConfig.set("saveAndLoadPlayerLocation", true);
+            }
+
+            if (!propertiesConfig.contains("deleteSessionLock")) {
+                propertiesConfig.set("deleteSessionLock", false);
+            }
+
+            propertiesConfig.save(propertiesPath.toFile());
+
         } catch (IOException | InvalidConfigurationException e) {
             throw new RuntimeException(e);
         }
 
-        defaultComment(registryPath.toFile(), "This file will be auto-filled with the according registry sections.");
+        defaultComment(registryPath.toFile(), "This file will be auto-filled with the according registry sections. \n Add template-material to your Template \n when you'd like another icon!");
+
 
         Bukkit.getPluginManager().registerEvents(new PlayerListener(), this);
 
         for (String name : WorldManagementMenu.getWorlds()) {
 
             if (Bukkit.getWorld(name) != null) continue;
+
+            if (propertiesConfig.contains("deleteSessionLock") && propertiesConfig.getBoolean("deleteSessionLock")) {
+                File folder = new File(Bukkit.getWorldContainer(), name);
+
+                if (folder.exists()) {
+                    for (File f : Objects.requireNonNull(folder.listFiles())) {
+                        if (f.isFile() && f.getName().equals("session.lock")) f.delete();
+                    }
+                }
+            }
+
+            name = ChatColor.stripColor(name);
+
+            if (name.contains("(") || name.contains(")")) {
+                name = name.replaceAll("\\(.*?\\)", "");
+            }
 
             new WorldCreator(name).createWorld();
         }
@@ -175,7 +239,6 @@ public final class BuildSystem extends JavaPlugin {
     public void defaultComment(File configFile, String comment) {
         try {
             List<String> lines = new BufferedReader(new FileReader(configFile)).lines().toList();
-
             String normalizedComment = "# " + comment.replace("\n", "\n# ").trim();
 
             String fileHeader = lines.stream()

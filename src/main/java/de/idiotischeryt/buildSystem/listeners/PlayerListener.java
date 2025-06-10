@@ -1,64 +1,99 @@
 package de.idiotischeryt.buildSystem.listeners;
 
+import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.PlayerManager;
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
+import org.bukkit.event.server.PluginDisableEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onLeave(PlayerQuitEvent e) {
-        Player player = e.getPlayer();
-
-        PlayerManager.saveInventory(player);
-        PlayerManager.saveLocation(player, player.getLocation());
+        savePlayerData(e.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onLKick(PlayerKickEvent e) {
-        Player player = e.getPlayer();
-
-        PlayerManager.saveInventory(player);
-        PlayerManager.saveLocation(player, player.getLocation());
+    public void onKick(PlayerKickEvent e) {
+        savePlayerData(e.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
-
         player.getInventory().clear();
 
-        PlayerManager.loadInventory(player);
-        PlayerManager.loadLocation(player);
+        if (shouldLoad("saveAndLoadPlayerInventory")) {
+            PlayerManager.loadInventory(player);
+        }
+
+        if (shouldLoad("saveAndLoadPlayerLocation")) {
+            PlayerManager.loadLocation(player);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onSwitch(PlayerTeleportEvent e) {
         Player player = e.getPlayer();
 
-        if (!e.getFrom().getWorld().equals(e.getTo().getWorld()) && e.getCause() == PlayerTeleportEvent.TeleportCause.PLUGIN) {
-            Location from = e.getFrom();
+        if (e.getCause() == PlayerTeleportEvent.TeleportCause.EXIT_BED) return;
 
-            PlayerManager.saveLocation(player, from);
+        if (!e.getFrom().getWorld().equals(e.getTo().getWorld()) && e.getCause() == PlayerTeleportEvent.TeleportCause.PLUGIN) {
+            if (shouldLoad("saveAndLoadPlayerLocation")) {
+                PlayerManager.saveLocation(player, e.getFrom());
+            }
         }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void changeWorld(@NotNull PlayerChangedWorldEvent e) {
+        Player player = e.getPlayer();
         World from = e.getFrom();
-        Player p = e.getPlayer();
 
-        PlayerManager.saveInventory(p, from);
+        if (BuildSystem.getInstance().propertiesConfig == null) return;
 
-        p.getInventory().clear();
+        if (shouldLoad("saveAndLoadPlayerInventory")) {
+            PlayerManager.saveInventory(player, from);
+            player.getInventory().clear();
+            PlayerManager.loadInventory(player);
+        }
 
-        PlayerManager.loadInventory(p);
+        if (shouldLoad("saveAndLoadPlayerLocation") && player.getLocation().getNearbyEntitiesByType(Player.class, 1).isEmpty()) {
+            PlayerManager.loadLocation(player);
+        }
+    }
 
-        if (e.getPlayer().getLocation().getNearbyEntitiesByType(Player.class, 1).isEmpty())
-            PlayerManager.loadLocation(p);
+    @EventHandler
+    public void onEnd(PluginDisableEvent e) {
+        if (BuildSystem.getInstance().propertiesConfig == null) return;
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (shouldLoad("saveAndLoadPlayerLocation")) {
+                PlayerManager.saveLocation(player, player.getLocation());
+            }
+
+            if (shouldLoad("saveAndLoadPlayerInventory")) {
+                PlayerManager.saveInventory(player, player.getWorld());
+            }
+        }
+    }
+
+    private void savePlayerData(Player player) {
+        if (shouldLoad("saveAndLoadPlayerInventory")) {
+            PlayerManager.saveInventory(player);
+        }
+
+        if (shouldLoad("saveAndLoadPlayerLocation")) {
+            PlayerManager.saveLocation(player, player.getLocation());
+        }
+    }
+
+    private boolean shouldLoad(String key) {
+        return BuildSystem.getInstance().propertiesConfig.contains(key) &&
+                BuildSystem.getInstance().propertiesConfig.getBoolean(key);
     }
 }

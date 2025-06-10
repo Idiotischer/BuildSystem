@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'de.idiotischeryt'
-version = '1.6'
+version = '1.8.3'
 
 repositories {
     mavenCentral()
@@ -25,12 +25,16 @@ repositories {
     maven {
         url "https://repo.dmulloy2.net/repository/public/"
     }
+    maven {
+        name = "minecodes"
+        url = "https://maven.minecodes.pl/releases"
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    implementation("net.wesjd:anvilgui:1.10.4-SNAPSHOT")
-    implementation 'de.rapha149.signgui:signgui:2.5.0'
+    implementation("net.wesjd:anvilgui:1.10.5-SNAPSHOT")
+    implementation 'de.rapha149.signgui:signgui:2.5.1'
 }
 
 shadowJar {

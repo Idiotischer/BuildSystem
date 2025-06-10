@@ -1,5 +1,6 @@
 package de.idiotischeryt.buildSystem.menusystem.menu;
 
+import de.idiotischeryt.buildSystem.BuildManager;
 import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.menusystem.PaginatedMenu;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
@@ -11,17 +12,23 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class WorldManagementMenu extends PaginatedMenu {
 
+    private @NonNull NamespacedKey key;
+
     public WorldManagementMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
+
+        key = new NamespacedKey(BuildSystem.getInstance(), "world");
     }
 
     @Override
@@ -76,8 +83,8 @@ public class WorldManagementMenu extends PaginatedMenu {
 
     @Override
     public void open() throws SignGUIVersionException {
-        if (playerMenuUtility.getOwner().hasPermission("buildsystem.permission.openMenu") || playerMenuUtility.getOwner().isOp())
-            super.open();
+        super.open();
+
     }
 
     @Override
@@ -90,14 +97,18 @@ public class WorldManagementMenu extends PaginatedMenu {
 
         if (!p.getOpenInventory().getTopInventory().equals(this.inventory)) return;
 
-        if (e.getCurrentItem().getType().equals(Material.GRASS_BLOCK)) {
+        if (e.getCurrentItem().getPersistentDataContainer().has(key)) {
 
             World world;
 
-            if (Bukkit.getWorld(e.getCurrentItem().getItemMeta().getDisplayName()) == null) {
-                world = new WorldCreator(e.getCurrentItem().getItemMeta().getDisplayName()).createWorld();
+            String name = ChatColor.stripColor(e.getCurrentItem().getItemMeta().getDisplayName()).replace(" ", "-");
+            name = name.replace("(", "");
+            name = name.replace(")", "");
+
+            if (Bukkit.getWorld(name) == null) {
+                world = new WorldCreator(name).createWorld();
             } else {
-                world = Bukkit.getWorld(e.getCurrentItem().getItemMeta().getDisplayName());
+                world = Bukkit.getWorld(name);
             }
 
             WorldSettingsMenu menu = new WorldSettingsMenu(playerMenuUtility, world);
@@ -149,40 +160,93 @@ public class WorldManagementMenu extends PaginatedMenu {
                 index = getMaxItemsPerPage() * page + i;
                 if (index >= worlds.size()) break;
                 if (worlds.get(index) != null) {
+                    String[] strings = BuildManager.namesByString(worlds.get(index));
 
-                    inventory.addItem(makeItem(Material.GRASS_BLOCK, worlds.get(index), false));
+                    if (strings.length < 2) {
+                        Bukkit.getLogger().warning("Invalid world entry: " + Arrays.toString(strings));
+                        continue;
+                    }
+
+                    Material defaultMat = Material.GRASS_BLOCK;
+                    Material worldMat = null;
+                    Material templateMat = null;
+
+                    ConfigurationSection section = BuildSystem.getConfiguration().getConfigurationSection(strings[1]);
+                    if (section != null) {
+                        String templateMatName = section.getString("template-material");
+                        if (templateMatName != null) {
+                            try {
+                                templateMat = Material.valueOf(templateMatName.toUpperCase());
+                            } catch (IllegalArgumentException e) {
+                                Bukkit.getLogger().warning("Invalid template material: " + templateMatName);
+                            }
+                        }
+                    } else {
+                        Bukkit.getLogger().warning("Configuration section '" + strings[1] + "' is missing!");
+                    }
+
+                    FileConfiguration config = BuildSystem.getInstance().getConfigManager().getConfig(strings[0], strings[1]);
+                    if (config != null) {
+                        String worldMatName = config.getString("world-material");
+                        if (worldMatName != null) {
+                            try {
+                                worldMat = Material.valueOf(worldMatName.toUpperCase());
+                            } catch (IllegalArgumentException e) {
+                                Bukkit.getLogger().warning("Invalid world material: " + worldMatName);
+                            }
+                        }
+                    } else {
+                        Bukkit.getLogger().warning("[BuildSystem] Config for '" + strings[0] + "' / '" + strings[1] + "' is missing! Using defaults...");
+                    }
+
+                    String lastElement = strings[strings.length - 1];
+                    String[] newArray = new String[strings.length - 1];
+                    System.arraycopy(strings, 0, newArray, 0, strings.length - 1);
+                    strings = newArray;
+
+                    String combinedString = ChatColor.RESET + String.join("-", strings) + ChatColor.GRAY + " (" + lastElement + ")";
+
+                    Material useMat = (worldMat != null) ? worldMat : (templateMat != null) ? templateMat : defaultMat;
+                    inventory.addItem(makeItem(useMat, combinedString, true, key));
+
                 }
             }
         }
     }
 
-    public static void loop() {
-        FileConfiguration config = BuildSystem.getConfiguration();
 
+    public static void loop() {
         try {
-            config.load(BuildSystem.getInstance().registryPath.toFile());
+            BuildSystem.getConfiguration().load(BuildSystem.getInstance().registryPath.toFile());
         } catch (IOException | InvalidConfigurationException e) {
             throw new RuntimeException(e);
         }
 
         worlds.clear();
 
-        for (String section : config.getKeys(false)) {
-            if (config.isConfigurationSection(section)) {
-                add(Objects.requireNonNull(config.getConfigurationSection(section)));
+        for (String section : BuildSystem.getConfiguration().getKeys(false)) {
+            if (BuildSystem.getConfiguration().isConfigurationSection(section)) {
+                add(Objects.requireNonNull(BuildSystem.getConfiguration().getConfigurationSection(section)));
             }
         }
     }
 
 
-    private static void add(ConfigurationSection config) {
+    private static void add(@NotNull ConfigurationSection config) {
         for (String section : config.getKeys(false)) {
             if (config.isConfigurationSection(section)) {
-                worlds.remove(section);
+                if (section.endsWith("-" + config.getName()))
+                    worlds.remove(section);
+                else
+                    worlds.remove(section + "-" + config.getName());
+
 
                 /* updating the section for some edge cases */
 
-                worlds.add(section);
+                if (section.endsWith("-" + config.getName()))
+                    worlds.add(section);
+                else
+                    worlds.add(section + "-" + config.getName());
             }
         }
     }

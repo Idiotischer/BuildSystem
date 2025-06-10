@@ -112,29 +112,43 @@ public class BuildSettingsMenu extends Menu {
                     }
                 }
 
-                configSections.add(getServer().getWorlds().getFirst().getName());
-
-                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Map name here", mapName, configSections, ChatColor.RED + "That map already exists!", true);
-            } else if (e.getCurrentItem().getType() == Material.NAME_TAG && e.getCurrentItem()
-                    .getPersistentDataContainer()
-                    .has(new NamespacedKey(BuildSystem.getInstance(), "Minigame_Object"))
-            ) {
-                List<String> configSections = new ArrayList<>();
-                FileConfiguration config = BuildSystem.getInstance().getConfig();
+                List<String> configSections1 = new ArrayList<>();
 
                 try {
-                    config.load(Paths.get(BuildSystem.getInstance().getDataPath().toString(), "config.yml").toFile());
+                    BuildSystem.getInstance().getConfig().load(Paths.get(BuildSystem.getInstance().getDataPath().toString(), "config.yml").toFile());
                 } catch (IOException | InvalidConfigurationException ex) {
                     throw new RuntimeException(ex);
                 }
 
-                for (String section : config.getKeys(false)) {
-                    if (config.isConfigurationSection(section)) {
+                for (String section : BuildSystem.getInstance().getConfig().getKeys(false)) {
+                    if (BuildSystem.getInstance().getConfig().isConfigurationSection(section)) {
+                        configSections1.add("-" + section);
+                    }
+                }
+
+                configSections.add(getServer().getWorlds().getFirst().getName());
+                configSections.add("template-material");
+
+                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Map name here", mapName, configSections, ChatColor.RED + "That map already exists!", true, false, false, configSections1);
+            } else if (e.getCurrentItem().getType() == Material.NAME_TAG && e.getCurrentItem().getItemMeta()
+                    .getPersistentDataContainer()
+                    .has(new NamespacedKey(BuildSystem.getInstance(), "Minigame_Object"))
+            ) {
+                List<String> configSections = new ArrayList<>();
+
+                try {
+                    BuildSystem.getInstance().getConfig().load(Paths.get(BuildSystem.getInstance().getDataPath().toString(), "config.yml").toFile());
+                } catch (IOException | InvalidConfigurationException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                for (String section : BuildSystem.getInstance().getConfig().getKeys(false)) {
+                    if (BuildSystem.getInstance().getConfig().isConfigurationSection(section)) {
                         configSections.add(section);
                     }
                 }
 
-                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Template name here", template, configSections, ChatColor.RED + "That type doesn't exist!", false);
+                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Template name here", template, configSections, ChatColor.RED + "That type doesn't exist!", false, true, false, Collections.emptyList());
             } else if (e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR && e.getCurrentItem()
                     .getPersistentDataContainer()
                     .has(new NamespacedKey(BuildSystem.getInstance(), "Biome_Object"))
@@ -216,12 +230,8 @@ public class BuildSettingsMenu extends Menu {
                         this,
                         new NamespacedKey(BuildSystem.getInstance(), "Boolean1_Object"),
                         new NamespacedKey(BuildSystem.getInstance(), "Boolean_Object"),
-                        value -> {
-                            emptys = value;
-                        },
-                        value1 -> {
-                            emptys = value1;
-                        }
+                        value -> emptys = value,
+                        value1 -> emptys = value1
                 );
 
                 menu.open();
@@ -458,7 +468,7 @@ public class BuildSettingsMenu extends Menu {
     );
 
     public void handleRename(Player p, Menu currentMenu, String label, String defaultText,
-                             String[] map, List<String> needed, String errText, boolean contains) {
+                             String[] map, List<String> needed, String errText, boolean contains, boolean emptyAllowed, boolean allowEndWith, List<String> endWith) {
         AnvilGUI.Builder builder = new AnvilGUI.Builder();
 
         builder.plugin(BuildSystem.getInstance())
@@ -476,40 +486,59 @@ public class BuildSettingsMenu extends Menu {
                     p.updateInventory();
                 })
                 .onClick((slot, state) -> {
-                    if (!isValid(state.getText())) return Arrays.asList(
-                            AnvilGUI.ResponseAction.replaceInputText(defaultText),
-                            AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Only [a-z0-9/._-] allowed!", true)
-                    );
+                    String inputText = state.getText().trim();
 
-                    if (contains) {
-                        if (needed.contains(state.getText())) {
-                            return Arrays.asList(
-                                    AnvilGUI.ResponseAction.replaceInputText(defaultText),
-                                    AnvilGUI.ResponseAction.updateTitle(errText, true)
-                            );
-                        }
-                    } else {
-                        if (!needed.contains(state.getText())) {
-                            return Arrays.asList(
-                                    AnvilGUI.ResponseAction.replaceInputText(defaultText),
-                                    AnvilGUI.ResponseAction.updateTitle(errText, true)
-                            );
+                    if (!isValid(inputText)) {
+                        return Arrays.asList(
+                                AnvilGUI.ResponseAction.replaceInputText(defaultText),
+                                AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Only [a-z0-9/._-] allowed!", true)
+                        );
+                    }
+
+                    if (!allowEndWith) {
+                        for (String s : endWith) {
+                            if (inputText.endsWith(s)) {
+                                return Arrays.asList(
+                                        AnvilGUI.ResponseAction.replaceInputText(defaultText),
+                                        AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Can't use template Name!", true)
+                                );
+                            }
                         }
                     }
 
-                    map[0] = state.getText();
+                    if (emptyAllowed && !needed.contains("")) {
+                        needed.add("");
+                    }
+
+                    if (emptyAllowed && !needed.contains("Other")) {
+                        needed.add("Other");
+                    }
+
+                    boolean isInNeeded = needed.contains(inputText);
+
+                    if ((contains && isInNeeded) || (!contains && !isInNeeded)) {
+                        return Arrays.asList(
+                                AnvilGUI.ResponseAction.replaceInputText(defaultText),
+                                AnvilGUI.ResponseAction.updateTitle(errText, true)
+                        );
+                    }
+
+                    map[0] = inputText;
 
                     Bukkit.getScheduler().runTaskLater(BuildSystem.getInstance(), () -> {
-                        state.getPlayer().getItemOnCursor().setType(Material.AIR);
+                        if (!state.getPlayer().getItemOnCursor().getType().isEmpty()) {
+                            state.getPlayer().getItemOnCursor().setType(Material.AIR);
+                        }
                     }, 2);
 
-                    if (!map[0].trim().isEmpty()) {
+                    if (!map[0].isEmpty()) {
                         p.closeInventory();
                         return Collections.singletonList(AnvilGUI.ResponseAction.close());
                     }
 
                     return Collections.singletonList(AnvilGUI.ResponseAction.replaceInputText(defaultText));
                 });
+
 
         builder.open(p);
     }
