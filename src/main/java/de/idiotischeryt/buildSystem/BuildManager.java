@@ -245,6 +245,7 @@ public class BuildManager {
     public static String[] namesByString(String name) {
         List<String> configSections = new ArrayList<>();
         FileConfiguration config = BuildSystem.getInstance().getConfig();
+        configSections.add("Other");
 
         try {
             config.load(Paths.get(BuildSystem.getInstance().getDataPath().toString(), "config.yml").toFile());
@@ -265,7 +266,8 @@ public class BuildManager {
             String first = String.join("-", Arrays.copyOfRange(strings, 0, strings.length - 1));
             String second = strings[strings.length - 1];
 
-            if (!configSections.contains(second)) return new String[]{name};
+            //TODO: could break smth (toLowerCase)
+            if (!configSections.contains(second.toLowerCase())) return new String[]{name};
 
             return new String[]{first, second};
         }
