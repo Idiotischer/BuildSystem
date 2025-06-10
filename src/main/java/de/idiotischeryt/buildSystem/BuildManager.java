@@ -1,5 +1,6 @@
 package de.idiotischeryt.buildSystem;
 
+import de.idiotischeryt.buildSystem.world.TemplateSettings;
 import de.idiotischeryt.buildSystem.world.WorldCreator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -68,22 +69,39 @@ public class BuildManager {
         BuildSystem.configuration.save(BuildSystem.getInstance().registryPath.toFile());
     }
 
-    public static Object getFromTemplateSection(String template, String mapName, String toGet) {
+    public static TemplateSettings getTemplateSettings(String template, String mapName) {
         ConfigurationSection minigameSection = BuildSystem.configuration.getConfigurationSection(template);
-
         if (minigameSection == null) {
-            BuildSystem.sendError("Section not found in registry.yml: ", template, "!");
+            Bukkit.getLogger().warning("[BuildSystem] Missing section for template: " + template);
             return null;
         }
 
         ConfigurationSection section = minigameSection.getConfigurationSection(mapName);
-
         if (section == null) {
-            BuildSystem.sendError("Section not found in registry.yml: ", template + "." + mapName, "!");
+            Bukkit.getLogger().warning("[BuildSystem] Missing section for map: " + mapName + " in template: " + template);
             return null;
         }
 
-        return section.get(toGet);
+        try {
+            boolean empty = section.getBoolean("empty");
+            boolean spawnMobs = section.getBoolean("spawnMobs");
+            boolean dayNightCycle = section.getBoolean("dayNightCycle");
+            String biomeStr = section.getString("biome");
+            String materialStr = section.getString("world-material");
+
+            if (biomeStr == null || materialStr == null) {
+                Bukkit.getLogger().warning("[BuildSystem] Missing biome or world-material in " + template + "/" + mapName);
+                return null;
+            }
+
+            Biome biome = Biome.valueOf(biomeStr);
+            Material material = Material.valueOf(materialStr);
+
+            return new TemplateSettings(empty, spawnMobs, dayNightCycle, biome, material);
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[BuildSystem] Failed to parse template settings for " + template + "/" + mapName + ": " + e.getMessage());
+            return null;
+        }
     }
 
     public static void delete(@NotNull World world, Player deleter) {
@@ -359,6 +377,9 @@ public class BuildManager {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         Path targetFile = targetFolder.toPath().resolve(sourceFolder.toPath().relativize(file));
+                        if(targetFile.getFileName().toString().equalsIgnoreCase("uid.dat")) {
+                            return FileVisitResult.CONTINUE;
+                        }
                         Files.copy(file, targetFile);
                         return FileVisitResult.CONTINUE;
                     }
@@ -381,45 +402,55 @@ public class BuildManager {
                 return;
             }
 
-                Boolean empty = getFromTemplateSection(worldNames[0], worldNames[1], "empty") instanceof Boolean b ? b : null;
-                Boolean spawnMobs = getFromTemplateSection(worldNames[0], worldNames[1], "spawnMobs") instanceof Boolean b ? b : null;
-                Boolean dayNightCycle = getFromTemplateSection(worldNames[0], worldNames[1], "dayNightCycle") instanceof Boolean b ? b : null;
-                Object biomeRaw = getFromTemplateSection(worldNames[0], worldNames[1], "biome");
-                Biome biome = biomeRaw instanceof String s ? Biome.valueOf(s) : null;
+            System.out.println("Copied world: "+ worldNames[0]);
+            System.out.println("Copied template: "+ worldNames[1]);
 
-                if (empty == null || spawnMobs == null || dayNightCycle == null || biome == null) {
-                    pl.sendMessage(ChatColor.RED + "Failed to copy: Missing or invalid configuration values.");
-                    delete(copiedWorld[0], pl);
-                    return;
-                }
+            TemplateSettings settings = getTemplateSettings(worldNames[1], worldNames[0]);
 
-                try {
-                    createTemplateSection(worldNames[1], finalNewWorldName, empty, spawnMobs, dayNightCycle, biome);
-                } catch (IOException e) {
-                    pl.sendMessage(ChatColor.RED + "An error occurred while creating the template.");
-                    e.printStackTrace();
-                    delete(copiedWorld[0], pl);
-                    return;
-                }
+            if (settings == null) {
+                pl.sendMessage(ChatColor.RED + "Failed to copy: Missing or invalid configuration section.");
+                delete(copiedWorld[0], pl);
+                return;
+            }
 
-                String mapName = worldNames[0];
-                String minigameName = worldNames[1];
+            System.out.println("empty: " + settings.empty());
+            System.out.println("spawnMobs: " + settings.spawnMobs());
+            System.out.println("dayNightCycle: " + settings.dayNightCycle());
+            System.out.println("biome: " + settings.biome());
 
-                try {
-                    BuildSystem.getInstance().getConfigManager().copyConfig(mapName, minigameName, finalSuffix, pl);
-                } catch (IOException | InvalidConfigurationException e) {
-                    BuildSystem.sendError("Failed to copy config", e.getMessage(), "");
-                    delete(copiedWorld[0], pl);
-                    return;
-                }
+            if (settings.biome() == null) {
+                pl.sendMessage(ChatColor.RED + "Failed to copy: Missing or invalid biome configuration.");
+                delete(copiedWorld[0], pl);
+                return;
+            }
 
-                pl.teleport(copiedWorld[0].getSpawnLocation());
-                Title title = Title.title(Component.text("World copied")
-                        .color(NamedTextColor.GREEN)
-                        .decorate(TextDecoration.BOLD), Component.text("successfully!")
-                        .color(NamedTextColor.GREEN)
-                        .decorate(TextDecoration.BOLD));
-                pl.showTitle(title);});
+            try {
+                createTemplateSection(worldNames[1], finalNewWorldName, settings.empty(), settings.spawnMobs(), settings.dayNightCycle(), settings.biome());
+            } catch (IOException e) {
+                pl.sendMessage(ChatColor.RED + "An error occurred while creating the template.");
+                e.printStackTrace();
+                delete(copiedWorld[0], pl);
+                return;
+            }
+
+            String mapName = worldNames[0];
+            String minigameName = worldNames[1];
+
+            try {
+                BuildSystem.getInstance().getConfigManager().copyConfig(mapName, minigameName, finalSuffix, pl);
+            } catch (IOException | InvalidConfigurationException e) {
+                BuildSystem.sendError("Failed to copy config", e.getMessage(), "");
+                delete(copiedWorld[0], pl);
+                return;
+            }
+
+            pl.teleport(copiedWorld[0].getSpawnLocation());
+            Title title = Title.title(Component.text("World copied")
+                    .color(NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD), Component.text("successfully!")
+                    .color(NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD));
+            pl.showTitle(title);});
         });
     }
 

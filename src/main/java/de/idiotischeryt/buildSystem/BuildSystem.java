@@ -167,6 +167,9 @@ public final class BuildSystem extends JavaPlugin {
             if (!propertiesConfig.contains("deleteSessionLock")) {
                 propertiesConfig.set("deleteSessionLock", false);
             }
+            if (!propertiesConfig.contains("deleteUidDat")) {
+                propertiesConfig.set("deleteUidDat", false);
+            }
 
             propertiesConfig.save(propertiesPath.toFile());
 
@@ -188,7 +191,16 @@ public final class BuildSystem extends JavaPlugin {
 
                 if (folder.exists()) {
                     for (File f : Objects.requireNonNull(folder.listFiles())) {
-                        if (f.isFile() && f.getName().equals("session.lock")) f.delete();
+                        if (f.isFile() && f.getName().equalsIgnoreCase("session.lock")) f.delete();
+                    }
+                }
+            }
+            if (propertiesConfig.contains("deleteUidDat") && propertiesConfig.getBoolean("deleteUidDat")) {
+                File folder = new File(Bukkit.getWorldContainer(), name);
+
+                if (folder.exists()) {
+                    for (File f : Objects.requireNonNull(folder.listFiles())) {
+                        if (f.isFile() && f.getName().equalsIgnoreCase("uid.dat")) f.delete();
                     }
                 }
             }
