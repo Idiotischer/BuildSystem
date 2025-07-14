@@ -53,6 +53,8 @@ public class WorldSettingsMenu extends Menu {
         } else if (e.getCurrentItem().getType() == Material.NETHERITE_SCRAP) {
             BuildManager.copy(world, (Player) e.getWhoClicked());
         }
+
+        //TODO: ein button von den barriers wird für die hierarchies einen erweitere ich zu icon changing (halt alles aus der registry config daylightcycle etc) und einen für config sachen setzen, also worldborder size oder so idk
     }
 
     @Override
