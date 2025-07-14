@@ -2,10 +2,12 @@ package de.idiotischeryt.buildSystem;
 
 import de.idiotischeryt.buildSystem.world.TemplateSettings;
 import de.idiotischeryt.buildSystem.world.WorldCreator;
+import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
+import org.apache.commons.io.FileUtils;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -22,13 +24,18 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.bukkit.Bukkit.getServer;
 
 public class BuildManager {
     public static void createWorld(Player p, String mapName, String minigame, boolean empty, Biome biome, boolean spawnMobs, boolean dayNightCycle, boolean weatherCycle) throws IOException, InvalidConfigurationException {
-        if (!p.hasPermission("buildsystem.permission.create") || !p.isOp()) return;
-
+        if (!p.hasPermission("buildsystem.permission.create") || !p.isOp()) {
+            p.sendMessage(Component.text("You don't have the right permissions to do this!")
+                    .color(NamedTextColor.DARK_RED)
+                    .decorate(TextDecoration.BOLD));
+            return;
+        }
         if (minigame.isBlank()) {
             minigame = "Other";
         } else {
@@ -49,7 +56,7 @@ public class BuildManager {
         );
     }
 
-    public static void createTemplateSection(String template, String mapName, boolean empty, boolean spawnMobs, boolean dayNightCycle, Biome biome) throws IOException {
+    public static void createTemplateSection(String template, String mapName, boolean empty, boolean spawnMobs, boolean dayNightCycle, Biome biome, Pair<String,?>... extra) throws IOException {
         ConfigurationSection minigameSection = BuildSystem.configuration.getConfigurationSection(template);
 
         if (minigameSection == null)
@@ -66,9 +73,16 @@ public class BuildManager {
         section.set("biome", biome.toString());
         section.set("world-material", Material.GRASS_BLOCK.toString().toUpperCase());
 
+        if (extra != null) {
+            for (Pair<String, ?> pair : extra) {
+                if (pair != null) {
+                    section.set(pair.left(), pair.right());
+                }
+            }
+        }
+
         BuildSystem.configuration.save(BuildSystem.getInstance().registryPath.toFile());
     }
-
     public static TemplateSettings getTemplateSettings(String template, String mapName) {
         ConfigurationSection minigameSection = BuildSystem.configuration.getConfigurationSection(template);
         if (minigameSection == null) {
@@ -136,25 +150,14 @@ public class BuildManager {
         PlayerManager.deleteInventoryFor(world);
         PlayerManager.deleteLocationFor(world);
 
+        Bukkit.unloadWorld(world, false);
+
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-            Bukkit.unloadWorld(world, false);
 
             Path worldFolder = world.getWorldFolder().toPath();
 
             try {
-                Files.walkFileTree(worldFolder, new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        Files.delete(file);
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                        Files.delete(dir);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
+                FileUtils.deleteDirectory(worldFolder.toFile());
             } catch (IOException e) {
                 new RuntimeException("Failed to delete world directory: " + worldFolder, e).printStackTrace();
             }
@@ -261,18 +264,25 @@ public class BuildManager {
 
         String[] strings = name.split("-");
 
-        if (strings.length != 2) {
-
+        if (strings.length == 2) {
+            return strings;
+        } else if (strings.length > 2) {
             String first = String.join("-", Arrays.copyOfRange(strings, 0, strings.length - 1));
             String second = strings[strings.length - 1];
 
-            //TODO: could break smth (toLowerCase)
-            if (!configSections.contains(second.toLowerCase())) return new String[]{name};
+            //TODO: get it with this check to workign yk?
+            //if (configSections.contains(second.toLowerCase())) {
+            //    return new String[]{first, second};
+            //} else {
+            //    Bukkit.getLogger().warning("Invalid world entry (section not found): " + name);
+            //    return new String[]{name, "unknown"};
+            //}
 
             return new String[]{first, second};
+        } else {
+            Bukkit.getLogger().warning("Invalid world entry (no split parts): " + name);
+            return new String[]{name, "unknown"};
         }
-
-        return strings;
     }
 
     public static void addToConfig(World world, String key, Object value) {
@@ -336,13 +346,18 @@ public class BuildManager {
         addToConfig(map, minigame, key, location);
     }
 
+
+    @SuppressWarnings("unchecked")
     public static void copy(@NotNull World sourceWorld, Player pl) {
         if (!pl.hasPermission("buildsystem.permission.copy") && !pl.isOp()) {
-            pl.sendMessage(Component.text("You don't have the permissions needed!")
+            pl.sendMessage(Component.text("You don't have the right permissions to do this!")
                     .color(NamedTextColor.DARK_RED)
                     .decorate(TextDecoration.BOLD));
             return;
         }
+
+        sourceWorld.save();
+        //optional ig unloaden mit force, also Bukkit.getServer().unloadWorld(sourceWorld, true);
 
         String[] worldNames = namesByWorld(sourceWorld);
 
@@ -350,12 +365,16 @@ public class BuildManager {
             File sourceFolder = sourceWorld.getWorldFolder();
             File targetFolder;
             int suffix = 1;
-
             File newTarget;
+            String newWorldName1;
             String newWorldName;
+            int cachedSuffix;
+
             do {
-                newWorldName = worldNames[0] + "-" + suffix + "-" + worldNames[1];
-                newTarget = new File(Bukkit.getWorldContainer(), newWorldName);
+                newWorldName = worldNames[0] + "-" + suffix;
+                newWorldName1 = worldNames[0] + "-" + suffix + "-" + worldNames[1];
+                newTarget = new File(Bukkit.getWorldContainer(), newWorldName1);
+                cachedSuffix = suffix;
                 suffix++;
             } while (newTarget.exists());
             targetFolder = newTarget;
@@ -368,95 +387,72 @@ public class BuildManager {
             }
 
             try {
-                Files.walkFileTree(sourceFolder.toPath(), new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                        Path targetDir = targetFolder.toPath().resolve(sourceFolder.toPath().relativize(dir));
-                        Files.createDirectories(targetDir);
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        Path targetFile = targetFolder.toPath().resolve(sourceFolder.toPath().relativize(file));
-                        if(targetFile.getFileName().toString().equalsIgnoreCase("uid.dat")) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        Files.copy(file, targetFile);
-                        return FileVisitResult.CONTINUE;
-                    }
+                FileUtils.copyDirectory(sourceFolder, targetFolder, file -> {
+                    String name = file.getName().toLowerCase();
+                    return !name.equals("uid.dat") && !name.equals("session.lock");
                 });
             } catch (IOException e) {
-                BuildSystem.sendError("Failed to copy world", e.getMessage(), "");
                 deleteWorldFolder(targetFolder);
+                pl.sendMessage(Component.text("Failed to copy the world files: " + e.getMessage())
+                        .color(NamedTextColor.RED)
+                        .decorate(TextDecoration.BOLD));
+                e.printStackTrace();
                 return;
             }
 
-            final World[] copiedWorld = new World[1];
-
-            String finalNewWorldName = newWorldName;
-            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> copiedWorld[0] =new org.bukkit.WorldCreator(finalNewWorldName).createWorld());
-            int finalSuffix = suffix;
-            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-                if (copiedWorld[0] == null) {
-                BuildSystem.sendError("World copy failed to load!", "", "");
+            World copiedWorld = new org.bukkit.WorldCreator(targetFolder.getName()).createWorld();
+            if (copiedWorld == null) {
                 deleteWorldFolder(targetFolder);
+                pl.sendMessage(Component.text("World copy failed to load!")
+                        .color(NamedTextColor.RED)
+                        .decorate(TextDecoration.BOLD));
                 return;
             }
-
-            System.out.println("Copied world: "+ worldNames[0]);
-            System.out.println("Copied template: "+ worldNames[1]);
 
             TemplateSettings settings = getTemplateSettings(worldNames[1], worldNames[0]);
-
-            if (settings == null) {
-                pl.sendMessage(ChatColor.RED + "Failed to copy: Missing or invalid configuration section.");
-                delete(copiedWorld[0], pl);
-                return;
-            }
-
-            System.out.println("empty: " + settings.empty());
-            System.out.println("spawnMobs: " + settings.spawnMobs());
-            System.out.println("dayNightCycle: " + settings.dayNightCycle());
-            System.out.println("biome: " + settings.biome());
-
-            if (settings.biome() == null) {
-                pl.sendMessage(ChatColor.RED + "Failed to copy: Missing or invalid biome configuration.");
-                delete(copiedWorld[0], pl);
+            if (settings == null || settings.biome() == null) {
+                pl.sendMessage(Component.text("Failed to copy: Missing or invalid configuration section or biome.")
+                        .color(NamedTextColor.RED));
+                delete(copiedWorld, pl);
                 return;
             }
 
             try {
-                createTemplateSection(worldNames[1], finalNewWorldName, settings.empty(), settings.spawnMobs(), settings.dayNightCycle(), settings.biome());
+                createTemplateSection(worldNames[1], newWorldName, settings.empty(),
+                        settings.spawnMobs(), settings.dayNightCycle(), settings.biome(), Pair.of("copied", true));
             } catch (IOException e) {
-                pl.sendMessage(ChatColor.RED + "An error occurred while creating the template.");
-                e.printStackTrace();
-                delete(copiedWorld[0], pl);
+                pl.sendMessage(Component.text("An error occurred while creating the template.")
+                        .color(NamedTextColor.RED));
+                delete(copiedWorld, pl);
                 return;
             }
 
-            String mapName = worldNames[0];
-            String minigameName = worldNames[1];
-
             try {
-                BuildSystem.getInstance().getConfigManager().copyConfig(mapName, minigameName, finalSuffix, pl);
+                FileConfiguration copiedConfig = BuildSystem.getInstance().getConfigManager()
+                        .copyConfig(worldNames[0], worldNames[1], cachedSuffix, pl);
+                if (copiedConfig == null) {
+                    pl.sendMessage(Component.text("No config found for this template, skipping config copy.")
+                            .color(NamedTextColor.YELLOW)
+                            .decorate(TextDecoration.BOLD));
+                }
             } catch (IOException | InvalidConfigurationException e) {
                 BuildSystem.sendError("Failed to copy config", e.getMessage(), "");
-                delete(copiedWorld[0], pl);
+                delete(copiedWorld, pl);
                 return;
             }
 
-            pl.teleport(copiedWorld[0].getSpawnLocation());
+            pl.teleport(copiedWorld.getSpawnLocation());
             Title title = Title.title(Component.text("World copied")
-                    .color(NamedTextColor.GREEN)
-                    .decorate(TextDecoration.BOLD), Component.text("successfully!")
-                    .color(NamedTextColor.GREEN)
-                    .decorate(TextDecoration.BOLD));
-            pl.showTitle(title);});
+                            .color(NamedTextColor.GREEN)
+                            .decorate(TextDecoration.BOLD),
+                    Component.text("successfully!")
+                            .color(NamedTextColor.GREEN)
+                            .decorate(TextDecoration.BOLD));
+            pl.showTitle(title);
         });
     }
 
-
+    private record CopyContext(String newWorldName, int suffix, File targetFolder) {}
 
     private static void deleteWorldFolder(File folder) {
         if (folder == null || !folder.exists()) return;

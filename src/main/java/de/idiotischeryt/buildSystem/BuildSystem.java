@@ -160,6 +160,10 @@ public final class BuildSystem extends JavaPlugin {
                 propertiesConfig.set("saveAndLoadPlayerInventory", true);
             }
 
+            if (!propertiesConfig.contains("safeKillAll")) {
+                propertiesConfig.set("safeKillAll", true);
+            }
+
             if (!propertiesConfig.contains("saveAndLoadPlayerLocation")) {
                 propertiesConfig.set("saveAndLoadPlayerLocation", true);
             }
@@ -317,7 +321,9 @@ public final class BuildSystem extends JavaPlugin {
         return configManager;
     }
 
-
+    public FileConfiguration getProperties() {
+        return propertiesConfig;
+    }
     public List<String> getConfigSections() {
         return configSection;
     }

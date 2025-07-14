@@ -61,6 +61,7 @@ public class SignUI extends PaginatedMenu {
                                         String[] strings = BuildManager.namesByString(filteredWorlds.get(index));
 
                                         if (strings.length < 2) {
+                                            //TODO: FIX THIS
                                             Bukkit.getLogger().warning("Invalid world entry: " + Arrays.toString(strings));
                                             continue;
                                         }

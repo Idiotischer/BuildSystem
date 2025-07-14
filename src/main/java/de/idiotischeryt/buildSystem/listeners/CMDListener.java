@@ -1,5 +1,6 @@
 package de.idiotischeryt.buildSystem.listeners;
 
+import de.idiotischeryt.buildSystem.BuildSystem;
 import de.idiotischeryt.buildSystem.ConfirmHandler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -14,6 +15,9 @@ import java.util.Locale;
 public class CMDListener implements Listener {
     @EventHandler
     public void onKill(PlayerCommandPreprocessEvent event) {
+        if(!BuildSystem.getInstance().getProperties().contains("safeKillAll"))  return;
+        if(!BuildSystem.getInstance().getProperties().getBoolean("safeKillAll")) return;
+
         String msg = event.getMessage().toLowerCase(Locale.ROOT).trim();
         Player player = event.getPlayer();
 

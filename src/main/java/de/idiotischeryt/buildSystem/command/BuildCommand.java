@@ -8,6 +8,7 @@ import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
 import de.rapha149.signgui.exception.SignGUIVersionException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -40,8 +41,12 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
-        if (!commandSender.hasPermission("buildsystem.permission.command") || !commandSender.isOp())
+        if (!commandSender.hasPermission("buildsystem.permission.command") || !commandSender.isOp()) {
+            commandSender.sendMessage(Component.text("You don't have the right permissions to do this!")
+                    .color(NamedTextColor.DARK_RED)
+                    .decorate(TextDecoration.BOLD));
             return false;
+        }
 
         if (args.length > 0 && args[0].equals("add")) {
             if (args.length < 3) {
@@ -135,8 +140,12 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            if (!commandSender.hasPermission("buildsystem.permission.teleport") || !commandSender.isOp())
+            if (!commandSender.hasPermission("buildsystem.permission.teleport") || !commandSender.isOp()) {
+                commandSender.sendMessage(Component.text("You don't have the right permissions to do this!")
+                        .color(NamedTextColor.DARK_RED)
+                        .decorate(TextDecoration.BOLD));
                 return false;
+            }
 
             Player target = commandSender instanceof Player ? (Player) commandSender : null;
 

@@ -68,6 +68,8 @@ public class WorldCreator {
 
             teleport(p, world);
 
+            world.save();
+
             return world;
         }
 
@@ -104,6 +106,8 @@ public class WorldCreator {
         }
 
         teleport(p, world);
+
+        world.save();
 
         return world;
     }

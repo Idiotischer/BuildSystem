@@ -23,7 +23,7 @@ Thumbs.db
 *.log
 
 # Minecraft
-server/
+run/
 
 # Temp files
 *.tmp
