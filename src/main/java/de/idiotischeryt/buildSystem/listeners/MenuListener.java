@@ -30,11 +30,7 @@ public class MenuListener implements Listener {
             // the menu we clicked on
             Menu menu = (Menu) holder;
             //Call the handleMenu object which takes the event and processes it
-            try {
-                menu.handleMenu(e);
-            } catch (SignGUIVersionException ex) {
-                throw new RuntimeException(ex);
-            }
+            menu.handleMenu(e);
         }
     }
 

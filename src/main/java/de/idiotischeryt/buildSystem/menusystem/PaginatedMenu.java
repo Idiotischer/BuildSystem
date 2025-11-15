@@ -29,6 +29,12 @@ public abstract class PaginatedMenu extends Menu {
     }
 
     //Set the border and menu buttons for the menu
+
+    public int getMaxItemsPerPage() {
+        return maxItemsPerPage;
+    }
+
+    @Override
     public void addMenuBorder() {
         inventory.setItem(48, makeItem(Material.DARK_OAK_BUTTON, ChatColor.GREEN + "Left"));
 
@@ -38,27 +44,6 @@ public abstract class PaginatedMenu extends Menu {
 
         inventory.setItem(53, makeItem(Material.PLAYER_HEAD, ChatColor.GREEN + "Create World"));
 
-        for (int i = 0; i < 10; i++) {
-            if (inventory.getItem(i) == null) {
-                inventory.setItem(i, super.FILLER_GLASS);
-            }
-        }
-
-        inventory.setItem(17, super.FILLER_GLASS);
-        inventory.setItem(18, super.FILLER_GLASS);
-        inventory.setItem(26, super.FILLER_GLASS);
-        inventory.setItem(27, super.FILLER_GLASS);
-        inventory.setItem(35, super.FILLER_GLASS);
-        inventory.setItem(36, super.FILLER_GLASS);
-
-        for (int i = 44; i < 54; i++) {
-            if (inventory.getItem(i) == null) {
-                inventory.setItem(i, super.FILLER_GLASS);
-            }
-        }
-    }
-
-    public int getMaxItemsPerPage() {
-        return maxItemsPerPage;
+        super.addMenuBorder();
     }
 }

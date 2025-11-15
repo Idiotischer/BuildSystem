@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import de.idiotischeryt.buildSystem.BuildSystem;
 import de.rapha149.signgui.exception.SignGUIVersionException;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -36,7 +37,6 @@ public abstract class Menu implements InventoryHolder {
     protected PlayerMenuUtility playerMenuUtility;
     public Inventory inventory;
     public ItemStack FILLER_GLASS = makeItem(Material.LIME_STAINED_GLASS_PANE, " ", false);
-
     public Menu(PlayerMenuUtility playerMenuUtility) {
         this.playerMenuUtility = playerMenuUtility;
     }
@@ -45,16 +45,37 @@ public abstract class Menu implements InventoryHolder {
 
     public abstract int getSlots();
 
-    public abstract void handleMenu(InventoryClickEvent e) throws SignGUIVersionException;
+    public abstract void handleMenu(InventoryClickEvent e);
 
     public void handleClose(InventoryCloseEvent e) {
         playerMenuUtility.menu = null;
         playerMenuUtility.lastMenu = this;
     }
 
+    public void addMenuBorder() {
+        for (int i = 0; i < 10; i++) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, FILLER_GLASS);
+            }
+        }
+
+        inventory.setItem(17, FILLER_GLASS);
+        inventory.setItem(18, FILLER_GLASS);
+        inventory.setItem(26, FILLER_GLASS);
+        inventory.setItem(27, FILLER_GLASS);
+        inventory.setItem(35, FILLER_GLASS);
+        inventory.setItem(36, FILLER_GLASS);
+
+        for (int i = 44; i < 54; i++) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, FILLER_GLASS);
+            }
+        }
+    }
+
     public abstract void setMenuItems();
 
-    public void open() throws SignGUIVersionException {
+    public void open() {
         if (inventory == null) {
             inventory = Bukkit.createInventory(this, getSlots(), getMenuName());
         }

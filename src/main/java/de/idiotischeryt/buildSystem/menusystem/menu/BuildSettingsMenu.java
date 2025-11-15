@@ -52,7 +52,7 @@ public class BuildSettingsMenu extends Menu {
             true, new NamespacedKey(BuildSystem.getInstance(), "Mapname_Object"));
     final ItemStack spaceItem3 = makeItem(Material.NAME_TAG,
             ChatColor.GOLD.toString() + ChatColor.BOLD + "Worldtype",
-            true, new NamespacedKey(BuildSystem.getInstance(), "Minigame_Object"));
+            true, new NamespacedKey(BuildSystem.getInstance(), "Template_Object"));
     final ItemStack spaceItem4 = makeItem(Material.GRASS_BLOCK,
             ChatColor.GOLD.toString() + ChatColor.BOLD + "Biome",
             true, new NamespacedKey(BuildSystem.getInstance(), "Biome_Object"));
@@ -82,7 +82,7 @@ public class BuildSettingsMenu extends Menu {
     }
 
     @Override
-    public void handleMenu(InventoryClickEvent e) throws SignGUIVersionException {
+    public void handleMenu(InventoryClickEvent e) {
 
         if (e.getClickedInventory() == inventory) {
 
@@ -129,10 +129,10 @@ public class BuildSettingsMenu extends Menu {
                 configSections.add(getServer().getWorlds().getFirst().getName());
                 configSections.add("template-material");
 
-                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Map name here", mapName, configSections, ChatColor.RED + "That map already exists!", true, false, false, configSections1);
+                handleRename(this, "Rename me", "Map name here", mapName, configSections, ChatColor.RED + "That map already exists!", true, false, false, configSections1);
             } else if (e.getCurrentItem().getType() == Material.NAME_TAG && e.getCurrentItem().getItemMeta()
                     .getPersistentDataContainer()
-                    .has(new NamespacedKey(BuildSystem.getInstance(), "Minigame_Object"))
+                    .has(new NamespacedKey(BuildSystem.getInstance(), "Template_Object"))
             ) {
                 List<String> configSections = new ArrayList<>();
 
@@ -148,7 +148,7 @@ public class BuildSettingsMenu extends Menu {
                     }
                 }
 
-                handleRename(playerMenuUtility.getOwner(), this, "Rename me", "Template name here", template, configSections, ChatColor.RED + "That type doesn't exist!", false, true, false, Collections.emptyList());
+                handleRename(this, "Rename me", "Template name here", template, configSections, ChatColor.RED + "That type doesn't exist!", false, true, false, Collections.emptyList());
             } else if (e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR && e.getCurrentItem()
                     .getPersistentDataContainer()
                     .has(new NamespacedKey(BuildSystem.getInstance(), "Biome_Object"))
@@ -159,13 +159,7 @@ public class BuildSettingsMenu extends Menu {
                         .text("Biome name here")
                         .itemLeft(makeItem(Material.NAME_TAG, "Rename me", false))
                         .onClose((state) -> {
-                            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-                                try {
-                                    current.open();
-                                } catch (SignGUIVersionException ex) {
-                                    throw new RuntimeException(ex);
-                                }
-                            });
+                            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
                         })
                         .onClick((slot, state) -> {
                             String inputText = state.getText();
@@ -205,7 +199,7 @@ public class BuildSettingsMenu extends Menu {
                             .getPersistentDataContainer()
                             .has(new NamespacedKey(BuildSystem.getInstance(), "Empty_Object"))
             ) {
-                Menu menu = new BooleanMenu(
+                Menu menu = new BooleanMenuExtended(
                         playerMenuUtility,
                         this,
                         "Choose if the World is Empty",
@@ -215,12 +209,7 @@ public class BuildSettingsMenu extends Menu {
                             System.out.println("Boolean_Object toggled to: " + value);
                             emptys = value;
                         });
-
-                try {
-                    menu.open();
-                } catch (SignGUIVersionException ex) {
-                    throw new RuntimeException(ex);
-                }
+                menu.open();
             } else if (e.getCurrentItem()
                     .getPersistentDataContainer()
                     .has(new NamespacedKey(BuildSystem.getInstance(), "DaylightCycle_Object"))
@@ -299,13 +288,7 @@ public class BuildSettingsMenu extends Menu {
                     public void handleClose(InventoryCloseEvent e) {
                         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
-                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-                            try {
-                                current.open();
-                            } catch (SignGUIVersionException ex) {
-                                throw new RuntimeException(ex);
-                            }
-                        });
+                        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open);
                     }
 
                     @Override
@@ -358,11 +341,7 @@ public class BuildSettingsMenu extends Menu {
         if (e.getReason() == InventoryCloseEvent.Reason.TELEPORT) return;
 
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-            try {
-                new WorldManagementMenu(playerMenuUtility).open();
-            } catch (SignGUIVersionException ex) {
-                throw new RuntimeException(ex);
-            }
+            new WorldManagementMenu(playerMenuUtility).open();
         });
 
         clear();
@@ -467,80 +446,10 @@ public class BuildSettingsMenu extends Menu {
             '/', '.', '_', '-'
     );
 
-    public void handleRename(Player p, Menu currentMenu, String label, String defaultText,
+    public void handleRename(Menu currentMenu, String label, String defaultText,
                              String[] map, List<String> needed, String errText, boolean contains, boolean emptyAllowed, boolean allowEndWith, List<String> endWith) {
-        AnvilGUI.Builder builder = new AnvilGUI.Builder();
-
-        builder.plugin(BuildSystem.getInstance())
-                .interactableSlots(1)
-                .text(defaultText)
-                .itemLeft(makeItem(Material.NAME_TAG, label, false))
-                .onClose(state -> {
-                    Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-                        try {
-                            currentMenu.open();
-                        } catch (SignGUIVersionException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                    p.updateInventory();
-                })
-                .onClick((slot, state) -> {
-                    String inputText = state.getText().trim();
-
-                    if (!isValid(inputText)) {
-                        return Arrays.asList(
-                                AnvilGUI.ResponseAction.replaceInputText(defaultText),
-                                AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Only [a-z0-9/._-] allowed!", true)
-                        );
-                    }
-
-                    if (!allowEndWith) {
-                        for (String s : endWith) {
-                            if (inputText.endsWith(s)) {
-                                return Arrays.asList(
-                                        AnvilGUI.ResponseAction.replaceInputText(defaultText),
-                                        AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Can't use template Name!", true)
-                                );
-                            }
-                        }
-                    }
-
-                    if (emptyAllowed && !needed.contains("")) {
-                        needed.add("");
-                    }
-
-                    if (emptyAllowed && !needed.contains("Other")) {
-                        needed.add("Other");
-                    }
-
-                    boolean isInNeeded = needed.contains(inputText);
-
-                    if ((contains && isInNeeded) || (!contains && !isInNeeded)) {
-                        return Arrays.asList(
-                                AnvilGUI.ResponseAction.replaceInputText(defaultText),
-                                AnvilGUI.ResponseAction.updateTitle(errText, true)
-                        );
-                    }
-
-                    map[0] = inputText;
-
-                    Bukkit.getScheduler().runTaskLater(BuildSystem.getInstance(), () -> {
-                        if (!state.getPlayer().getItemOnCursor().getType().isEmpty()) {
-                            state.getPlayer().getItemOnCursor().setType(Material.AIR);
-                        }
-                    }, 2);
-
-                    if (!map[0].isEmpty()) {
-                        p.closeInventory();
-                        return Collections.singletonList(AnvilGUI.ResponseAction.close());
-                    }
-
-                    return Collections.singletonList(AnvilGUI.ResponseAction.replaceInputText(defaultText));
-                });
-
-
-        builder.open(p);
+        AnvilMenu menu = new AnvilMenu(this.playerMenuUtility,currentMenu,label,defaultText,map,needed,errText,contains,emptyAllowed,allowEndWith,endWith);
+        menu.open();
     }
 
     public static boolean isValid(String input) {

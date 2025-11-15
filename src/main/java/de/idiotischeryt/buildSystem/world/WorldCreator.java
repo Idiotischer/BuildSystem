@@ -4,6 +4,7 @@ import de.idiotischeryt.buildSystem.BuildSystem;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -11,8 +12,8 @@ public class WorldCreator {
 
     public static World createWorld(Player p, String worldName, String minigame, boolean empty, boolean spawnMobs, boolean dayNightCycle, boolean weatherCycle, Biome biome) {
         org.bukkit.WorldCreator creator = new org.bukkit.WorldCreator(worldName + "-" + minigame);
-        if (empty) {
 
+        if (empty) {
             //creator.generator(new ChunkGenerator() {
             //    @Override
             //    public @NotNull ChunkData generateChunkData(@NotNull World world, @NotNull Random random, int x, int z, @NotNull BiomeGrid biome) {
@@ -52,7 +53,6 @@ public class WorldCreator {
             world.getBlockAt(0, 64, 0).setType(Material.BEDROCK);
 
             world.setSpawnLocation(0, 65, 0);
-
 
             if (!spawnMobs) {
                 world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
@@ -110,6 +110,14 @@ public class WorldCreator {
         world.save();
 
         return world;
+    }
+
+    private static String parseSettings(String modernGen) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.insert(0, modernGen);
+
+        return "";
     }
 
     public static void teleport(Player p, World world) {

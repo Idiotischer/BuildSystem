@@ -34,7 +34,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    implementation("net.wesjd:anvilgui:1.10.7-SNAPSHOT")
+    implementation("net.wesjd:anvilgui:1.10.10-SNAPSHOT")
     implementation 'de.rapha149.signgui:signgui:2.5.3'
     // https://mvnrepository.com/artifact/commons-io/commons-io
     implementation 'commons-io:commons-io:2.19.0'
@@ -55,7 +55,7 @@ tasks {
 
 shadowJar {
     archiveFileName.set("BuildSystem-${version}.jar")
-    destinationDirectory.set(file("server/1.21/plugins"))
+    destinationDirectory.set(file("run/plugins"))
 }
 
 def targetJavaVersion = 21

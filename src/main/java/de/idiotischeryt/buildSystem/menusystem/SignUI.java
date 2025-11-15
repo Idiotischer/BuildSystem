@@ -34,7 +34,7 @@ public class SignUI extends PaginatedMenu {
     }
 
     @Override
-    public void open() throws SignGUIVersionException {
+    public void open() {
         inventory = Bukkit.createInventory(this, getSlots(), getMenuName());
 
         this.setMenuItems();
@@ -42,83 +42,88 @@ public class SignUI extends PaginatedMenu {
         playerMenuUtility.menu = this;
 
         if (!wasInSign) {
-            SignGUI ui = SignGUI.builder()
-                    .setType(Material.OAK_SIGN)
-                    .setGlow(true)
-                    .setLine(2, "--------------")
-                    .setLine(1, "<< write here >>")
-                    .setLine(0, "--------------")
-                    .setHandler((player, signGUIResult) -> {
-                        String input = signGUIResult.getLines()[1];
-                        List<String> filteredWorlds = searchInput(input, WorldManagementMenu.getWorlds());
+            SignGUI ui = null;
+            try {
+                ui = SignGUI.builder()
+                        .setType(Material.OAK_SIGN)
+                        .setGlow(true)
+                        .setLine(2, "--------------")
+                        .setLine(1, "<< write here >>")
+                        .setLine(0, "--------------")
+                        .setHandler((player, signGUIResult) -> {
+                            String input = signGUIResult.getLines()[1];
+                            List<String> filteredWorlds = searchInput(input, WorldManagementMenu.getWorlds());
 
-                        return List.of(SignGUIAction.runSync(BuildSystem.getInstance(), () -> {
-                            if (!filteredWorlds.isEmpty()) {
-                                for (int i = 0; i < getMaxItemsPerPage(); i++) {
-                                    index = getMaxItemsPerPage() * page + i;
-                                    if (index >= filteredWorlds.size()) break;
-                                    if (filteredWorlds.get(index) != null) {
-                                        String[] strings = BuildManager.namesByString(filteredWorlds.get(index));
+                            return List.of(SignGUIAction.runSync(BuildSystem.getInstance(), () -> {
+                                if (!filteredWorlds.isEmpty()) {
+                                    for (int i = 0; i < getMaxItemsPerPage(); i++) {
+                                        index = getMaxItemsPerPage() * page + i;
+                                        if (index >= filteredWorlds.size()) break;
+                                        if (filteredWorlds.get(index) != null) {
+                                            String[] strings = BuildManager.namesByString(filteredWorlds.get(index));
 
-                                        if (strings.length < 2) {
-                                            //TODO: FIX THIS
-                                            Bukkit.getLogger().warning("Invalid world entry: " + Arrays.toString(strings));
-                                            continue;
-                                        }
-
-                                        Material defaultMat = Material.GRASS_BLOCK;
-                                        Material worldMat = null;
-                                        Material templateMat = null;
-
-                                        ConfigurationSection section = BuildSystem.getConfiguration().getConfigurationSection(strings[1]);
-                                        if (section != null) {
-                                            String templateMatName = section.getString("template-material");
-                                            if (templateMatName != null) {
-                                                try {
-                                                    templateMat = Material.valueOf(templateMatName.toUpperCase());
-                                                } catch (IllegalArgumentException e) {
-                                                    Bukkit.getLogger().warning("Invalid template material: " + templateMatName);
-                                                }
+                                            if (strings.length < 2) {
+                                                //TODO: FIX THIS
+                                                Bukkit.getLogger().warning("Invalid world entry: " + Arrays.toString(strings));
+                                                continue;
                                             }
-                                        } else {
-                                            Bukkit.getLogger().warning("Configuration section '" + strings[1] + "' is missing!");
-                                        }
 
-                                        FileConfiguration config = BuildSystem.getInstance().getConfigManager().getConfig(strings[0], strings[1]);
-                                        if (config != null) {
-                                            String worldMatName = config.getString("world-material");
-                                            if (worldMatName != null) {
-                                                try {
-                                                    worldMat = Material.valueOf(worldMatName.toUpperCase());
-                                                } catch (IllegalArgumentException e) {
-                                                    Bukkit.getLogger().warning("Invalid world material: " + worldMatName);
+                                            Material defaultMat = Material.GRASS_BLOCK;
+                                            Material worldMat = null;
+                                            Material templateMat = null;
+
+                                            ConfigurationSection section = BuildSystem.getConfiguration().getConfigurationSection(strings[1]);
+                                            if (section != null) {
+                                                String templateMatName = section.getString("template-material");
+                                                if (templateMatName != null) {
+                                                    try {
+                                                        templateMat = Material.valueOf(templateMatName.toUpperCase());
+                                                    } catch (IllegalArgumentException e) {
+                                                        Bukkit.getLogger().warning("Invalid template material: " + templateMatName);
+                                                    }
                                                 }
+                                            } else {
+                                                Bukkit.getLogger().warning("Configuration section '" + strings[1] + "' is missing!");
                                             }
-                                        } else {
-                                            Bukkit.getLogger().warning("[BuildSystem] Config for '" + strings[0] + "' / '" + strings[1] + "' is missing! Using defaults...");
+
+                                            FileConfiguration config = BuildSystem.getInstance().getConfigManager().getConfig(strings[0], strings[1]);
+                                            if (config != null) {
+                                                String worldMatName = config.getString("world-material");
+                                                if (worldMatName != null) {
+                                                    try {
+                                                        worldMat = Material.valueOf(worldMatName.toUpperCase());
+                                                    } catch (IllegalArgumentException e) {
+                                                        Bukkit.getLogger().warning("Invalid world material: " + worldMatName);
+                                                    }
+                                                }
+                                            } else {
+                                                Bukkit.getLogger().warning("[BuildSystem] Config for '" + strings[0] + "' / '" + strings[1] + "' is missing! Using defaults...");
+                                            }
+
+                                            String lastElement = strings[strings.length - 1];
+                                            String[] newArray = new String[strings.length - 1];
+                                            System.arraycopy(strings, 0, newArray, 0, strings.length - 1);
+                                            strings = newArray;
+
+                                            String combinedString = ChatColor.RESET + String.join("-", strings) + ChatColor.GRAY + " (" + lastElement + ")";
+
+                                            Material useMat = (worldMat != null) ? worldMat : (templateMat != null) ? templateMat : defaultMat;
+                                            inventory.addItem(makeItem(useMat, combinedString, true, key));
                                         }
 
-                                        String lastElement = strings[strings.length - 1];
-                                        String[] newArray = new String[strings.length - 1];
-                                        System.arraycopy(strings, 0, newArray, 0, strings.length - 1);
-                                        strings = newArray;
-
-                                        String combinedString = ChatColor.RESET + String.join("-", strings) + ChatColor.GRAY + " (" + lastElement + ")";
-
-                                        Material useMat = (worldMat != null) ? worldMat : (templateMat != null) ? templateMat : defaultMat;
-                                        inventory.addItem(makeItem(useMat, combinedString, true, key));
                                     }
-
+                                } else {
+                                    inventory.addItem(makeItem(Material.BARRIER, ChatColor.RED + "No world(s) found!", false));
                                 }
-                            } else {
-                                inventory.addItem(makeItem(Material.BARRIER, ChatColor.RED + "No world(s) found!", false));
-                            }
 
-                            playerMenuUtility.getOwner().openInventory(inventory);
-                        }));
-                    })
-                    .callHandlerSynchronously(BuildSystem.getInstance())
-                    .build();
+                                playerMenuUtility.getOwner().openInventory(inventory);
+                            }));
+                        })
+                        .callHandlerSynchronously(BuildSystem.getInstance())
+                        .build();
+            } catch (SignGUIVersionException e) {
+                throw new RuntimeException(e);
+            }
 
             wasInSign = true;
 
@@ -210,7 +215,7 @@ public class SignUI extends PaginatedMenu {
     }
 
     @Override
-    public void handleMenu(InventoryClickEvent e) throws SignGUIVersionException {
+    public void handleMenu(InventoryClickEvent e) {
         Player p = (Player) e.getWhoClicked();
 
         ArrayList<Player> players = new ArrayList<>(getServer().getOnlinePlayers());
@@ -233,21 +238,15 @@ public class SignUI extends PaginatedMenu {
                     p.sendMessage(ChatColor.GRAY + "You are already on the first page.");
                 } else {
                     page = page - 1;
-                    try {
-                        open();
-                    } catch (SignGUIVersionException ex) {
-                        throw new RuntimeException(ex);
-                    }
+
+                    open();
                 }
             } else if (ChatColor.stripColor(e.getCurrentItem().getItemMeta().getDisplayName()).equalsIgnoreCase("Right") &&
                     e.getCurrentItem().getPersistentDataContainer().has(new NamespacedKey(BuildSystem.getInstance(), "menuPart"))) {
                 if (!((index + 1) >= players.size())) {
                     page = page + 1;
-                    try {
-                        open();
-                    } catch (SignGUIVersionException ex) {
-                        throw new RuntimeException(ex);
-                    }
+
+                    open();
                 } else {
                     p.sendMessage(ChatColor.GRAY + "You are on the last page.");
                 }
@@ -277,11 +276,7 @@ public class SignUI extends PaginatedMenu {
         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-            try {
-                new WorldManagementMenu(playerMenuUtility).open();
-            } catch (SignGUIVersionException ex) {
-                throw new RuntimeException(ex);
-            }
+            new WorldManagementMenu(playerMenuUtility).open();
         });
     }
 

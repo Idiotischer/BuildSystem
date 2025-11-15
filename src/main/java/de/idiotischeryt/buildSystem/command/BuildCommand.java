@@ -251,13 +251,7 @@ public class BuildCommand implements CommandExecutor, TabCompleter {
             }
 
             WorldManagementMenu menu = new WorldManagementMenu(new PlayerMenuUtility(p));
-            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-                try {
-                    menu.open();
-                } catch (SignGUIVersionException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), menu::open);
 
             return true;
         }

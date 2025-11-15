@@ -2,8 +2,10 @@ package de.idiotischeryt.buildSystem;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +36,18 @@ public class ConfirmHandler {
         }
 
         player.sendMessage(Component.text("✔ Removed " + toKill.size() + " entities using selector: " + selector)
+                .color(NamedTextColor.GREEN));
+
+    }
+
+    public static void executeTp(Player player, String selector) {
+        List<Entity> toTPp = SelectorUtil.resolveSelector(player, selector);
+
+        for (Entity entity : toTPp) {
+            entity.teleport(entity);
+        }
+
+        player.sendMessage(Component.text("✔ Teleported " + toTPp.size() + " entities using selector: " + selector)
                 .color(NamedTextColor.GREEN));
     }
 }

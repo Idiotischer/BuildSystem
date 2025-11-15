@@ -21,19 +21,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class WorldManagementMenu extends PaginatedMenu {
+//TODO: Merge with WorldManagementMenu and make it modular
+//TODO: also make searching search only in the hierarchy
+public class WorldHierarchyManagementMenu extends PaginatedMenu {
 
     private @NonNull NamespacedKey key;
+    final World src;
 
-    public WorldManagementMenu(PlayerMenuUtility playerMenuUtility) {
+    public WorldHierarchyManagementMenu(World src, PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
+        this.src = src;
 
         key = new NamespacedKey(BuildSystem.getInstance(), "world");
     }
 
     @Override
     public void addMenuBorder() {
-        inventory.setItem(45, makeItem(Material.OAK_SIGN, ChatColor.GREEN + "Search"));
+        //inventory.setItem(45, makeItem(Material.OAK_SIGN, ChatColor.GREEN + "Search"));
 
         inventory.setItem(48, makeItem(Material.DARK_OAK_BUTTON, ChatColor.GREEN + "Left"));
 
@@ -73,7 +77,7 @@ public class WorldManagementMenu extends PaginatedMenu {
 
     @Override
     public String getMenuName() {
-        return "WorldManager";
+        return "HierarchyManager";
     }
 
     @Override
@@ -82,7 +86,7 @@ public class WorldManagementMenu extends PaginatedMenu {
     }
 
     @Override
-    public void open() {
+    public void open()  {
         super.open();
 
     }
@@ -114,15 +118,17 @@ public class WorldManagementMenu extends PaginatedMenu {
             WorldSettingsMenu menu = new WorldSettingsMenu(playerMenuUtility, world);
 
             menu.open();
-        } else if (e.getCurrentItem().getType().equals(Material.OAK_SIGN)) {
-            SignUI ui = new SignUI(playerMenuUtility);
-            ui.open();
-        } else if (e.getCurrentItem().getType() == Material.PLAYER_HEAD) {
-            new BuildSettingsMenu(playerMenuUtility).open();
+        }
+        //else if (e.getCurrentItem().getType().equals(Material.OAK_SIGN)) {
+        //    SignUI ui = new SignUI(playerMenuUtility);
+        //    ui.open();
+        //}
+        else if (e.getCurrentItem().getType() == Material.PLAYER_HEAD) {
+            BuildManager.copy(src,null);
         } else if (e.getCurrentItem().getType().equals(Material.BARRIER) &&
                 e.getCurrentItem().getPersistentDataContainer().has(new NamespacedKey(BuildSystem.getInstance(), "menuPart"))) {
 
-            p.closeInventory();
+            new WorldManagementMenu(playerMenuUtility).open(); //TODO: check das mal
 
         } else if (e.getCurrentItem().getType().equals(Material.DARK_OAK_BUTTON) &&
                 e.getCurrentItem().getPersistentDataContainer().has(new NamespacedKey(BuildSystem.getInstance(), "menuPart"))) {

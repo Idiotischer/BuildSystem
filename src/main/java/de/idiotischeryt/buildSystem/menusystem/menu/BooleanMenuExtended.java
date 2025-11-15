@@ -11,33 +11,18 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-public class BooleanMenu extends Menu {
-    public final String title;
-    public final NamespacedKey booleanKey;
-    public final Consumer<Boolean> callback;
-    public final BuildSettingsMenu menu;
-    public boolean currentValue;
+public class BooleanMenuExtended extends BooleanMenu {
 
-    public BooleanMenu(PlayerMenuUtility playerMenuUtility, BuildSettingsMenu menu, String title, NamespacedKey booleanKey, boolean initialValue, Consumer<Boolean> callback) {
-        super(playerMenuUtility);
-        this.title = title;
-        this.booleanKey = booleanKey;
-        this.currentValue = initialValue;
-        this.callback = callback;
-        this.menu = menu;
-    }
-
-    @Override
-    public String getMenuName() {
-        return title;
-    }
-
-    @Override
-    public int getSlots() {
-        return 5 * 9;
+    boolean normalGen;
+    
+    LayerMenu layerMenu;
+    
+    public BooleanMenuExtended(PlayerMenuUtility playerMenuUtility, BuildSettingsMenu menu, String title, NamespacedKey booleanKey, boolean initialValue, Consumer<Boolean> callback) {
+        super(playerMenuUtility, menu, title, booleanKey, initialValue, callback);
     }
 
     @Override
@@ -58,22 +43,28 @@ public class BooleanMenu extends Menu {
             inventory.setItem(e.getSlot(), stack);
 
             callback.accept(currentValue);
+        } else if(e.getCurrentItem() != null && e.getCurrentItem().getType() == Material.GRASS_BLOCK) {
+            //hier alle items außer dieses so auf barrier machen und dann nd mehr clickable
+            this.normalGen = !this.normalGen;
+        } else if(e.getCurrentItem() != null && e.getCurrentItem().getType() == Material.BOOK) {
+            this.layerMenu = new LayerMenu(this, playerMenuUtility);
+            layerMenu.open();
         }
     }
 
     @Override
-    public void handleClose(InventoryCloseEvent e) {
-        if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
-        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), menu::open);
-
-    }
-
-    @Override
     public void setMenuItems() {
-        ItemStack initialItem = currentValue
+        ItemStack renameItem = makeItem(Material.BOOK, "Generator Settings");
+
+        ItemStack normalModeItem = makeItem(Material.GRASS_BLOCK, "NormalMode");
+
+        ItemStack initialItem = this.currentValue
                 ? makeItem(Material.LIME_STAINED_GLASS_PANE, "True", true, booleanKey, true)
                 : makeItem(Material.RED_STAINED_GLASS_PANE, "False", true, booleanKey, false);
 
-        inventory.setItem(22, initialItem);
+        //guck mal ob so gut aussieht mit center usw
+        inventory.setItem(20, initialItem);
+        inventory.setItem(22, renameItem);
+        inventory.setItem(24, normalModeItem); // when press dann alle anderen barrier und später wird ne normal world generated
     }
 }

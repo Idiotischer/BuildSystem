@@ -97,13 +97,7 @@ public class ToggleMenu extends Menu {
     public void handleClose(InventoryCloseEvent e) {
         if (e.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) return;
 
-        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
-            try {
-                menu.open();
-            } catch (SignGUIVersionException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
+        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), menu::open);
     }
 
     @Override

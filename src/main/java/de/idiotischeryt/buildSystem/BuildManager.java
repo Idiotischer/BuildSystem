@@ -119,7 +119,7 @@ public class BuildManager {
     }
 
     public static void delete(@NotNull World world, Player deleter) {
-        if (!deleter.hasPermission("buildsystem.permission.delete") || !deleter.isOp()) {
+        if (deleter != null && !deleter.hasPermission("buildsystem.permission.delete") || !deleter.isOp()) {
             deleter.sendMessage(
                     Component.text("You don't have the permissions needed!")
                             .color(NamedTextColor.DARK_RED)
@@ -349,7 +349,7 @@ public class BuildManager {
 
     @SuppressWarnings("unchecked")
     public static void copy(@NotNull World sourceWorld, Player pl) {
-        if (!pl.hasPermission("buildsystem.permission.copy") && !pl.isOp()) {
+        if (pl != null && !pl.hasPermission("buildsystem.permission.copy") && !pl.isOp()) {
             pl.sendMessage(Component.text("You don't have the right permissions to do this!")
                     .color(NamedTextColor.DARK_RED)
                     .decorate(TextDecoration.BOLD));
@@ -380,7 +380,8 @@ public class BuildManager {
             targetFolder = newTarget;
 
             if (targetFolder.exists()) {
-                pl.sendMessage(Component.text("Target world already exists!")
+                if(pl != null)
+                    pl.sendMessage(Component.text("Target world already exists!")
                         .color(NamedTextColor.RED)
                         .decorate(TextDecoration.BOLD));
                 return;
@@ -393,7 +394,8 @@ public class BuildManager {
                 });
             } catch (IOException e) {
                 deleteWorldFolder(targetFolder);
-                pl.sendMessage(Component.text("Failed to copy the world files: " + e.getMessage())
+                if(pl != null)
+                    pl.sendMessage(Component.text("Failed to copy the world files: " + e.getMessage())
                         .color(NamedTextColor.RED)
                         .decorate(TextDecoration.BOLD));
                 e.printStackTrace();
@@ -403,7 +405,8 @@ public class BuildManager {
             World copiedWorld = new org.bukkit.WorldCreator(targetFolder.getName()).createWorld();
             if (copiedWorld == null) {
                 deleteWorldFolder(targetFolder);
-                pl.sendMessage(Component.text("World copy failed to load!")
+                if(pl != null)
+                    pl.sendMessage(Component.text("World copy failed to load!")
                         .color(NamedTextColor.RED)
                         .decorate(TextDecoration.BOLD));
                 return;
@@ -411,7 +414,8 @@ public class BuildManager {
 
             TemplateSettings settings = getTemplateSettings(worldNames[1], worldNames[0]);
             if (settings == null || settings.biome() == null) {
-                pl.sendMessage(Component.text("Failed to copy: Missing or invalid configuration section or biome.")
+                if(pl != null)
+                    pl.sendMessage(Component.text("Failed to copy: Missing or invalid configuration section or biome.")
                         .color(NamedTextColor.RED));
                 delete(copiedWorld, pl);
                 return;
@@ -421,7 +425,8 @@ public class BuildManager {
                 createTemplateSection(worldNames[1], newWorldName, settings.empty(),
                         settings.spawnMobs(), settings.dayNightCycle(), settings.biome(), Pair.of("copied", true));
             } catch (IOException e) {
-                pl.sendMessage(Component.text("An error occurred while creating the template.")
+                if(pl != null)
+                    pl.sendMessage(Component.text("An error occurred while creating the template.")
                         .color(NamedTextColor.RED));
                 delete(copiedWorld, pl);
                 return;
@@ -431,7 +436,8 @@ public class BuildManager {
                 FileConfiguration copiedConfig = BuildSystem.getInstance().getConfigManager()
                         .copyConfig(worldNames[0], worldNames[1], cachedSuffix, pl);
                 if (copiedConfig == null) {
-                    pl.sendMessage(Component.text("No config found for this template, skipping config copy.")
+                    if(pl != null)
+                        pl.sendMessage(Component.text("No config found for this template, skipping config copy.")
                             .color(NamedTextColor.YELLOW)
                             .decorate(TextDecoration.BOLD));
                 }
@@ -441,14 +447,16 @@ public class BuildManager {
                 return;
             }
 
-            pl.teleport(copiedWorld.getSpawnLocation());
-            Title title = Title.title(Component.text("World copied")
-                            .color(NamedTextColor.GREEN)
-                            .decorate(TextDecoration.BOLD),
-                    Component.text("successfully!")
-                            .color(NamedTextColor.GREEN)
-                            .decorate(TextDecoration.BOLD));
-            pl.showTitle(title);
+            if(pl != null) {
+                pl.teleport(copiedWorld.getSpawnLocation());
+                Title title = Title.title(Component.text("World copied")
+                                .color(NamedTextColor.GREEN)
+                                .decorate(TextDecoration.BOLD),
+                        Component.text("successfully!")
+                                .color(NamedTextColor.GREEN)
+                                .decorate(TextDecoration.BOLD));
+                pl.showTitle(title);
+            }
         });
     }
 

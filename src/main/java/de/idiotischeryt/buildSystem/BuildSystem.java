@@ -2,10 +2,12 @@ package de.idiotischeryt.buildSystem;
 
 import de.idiotischeryt.buildSystem.command.BuildCommand;
 import de.idiotischeryt.buildSystem.gui.InventoryUI;
+import de.idiotischeryt.buildSystem.listeners.AnvilListener;
 import de.idiotischeryt.buildSystem.listeners.CMDListener;
 import de.idiotischeryt.buildSystem.listeners.MenuListener;
 import de.idiotischeryt.buildSystem.listeners.PlayerListener;
 import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
+import de.idiotischeryt.buildSystem.menusystem.menu.RenameData;
 import de.idiotischeryt.buildSystem.menusystem.menu.WorldManagementMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -25,8 +27,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-//TODO: use only nio, its currently too messy with the old io stuff AND add default world i nthe menu (world, world_end, world_nether, etc)
+//TODO: use only nio, its currently too messy with the old io stuff AND add default world in the menu (world, world_end, world_nether, etc)
 //TODO: add import world feature
+//TODO: make copies be listed under the source world, for this i'd need to fix the logic in signGUI (not) and worldmanagementmenu which filters the world and lists it, so i'd need to filter all worlds with copied: true
+//TODO: add /docs which opens a UI with knowledge book which leads to docs
 public final class BuildSystem extends JavaPlugin {
     static BuildSystem inst = null;
     ConfigManager configManager = null;
@@ -50,7 +54,7 @@ public final class BuildSystem extends JavaPlugin {
     private static InventoryUI ui = null;
 
     LocationViewer viewer;
-
+    private final Map<UUID, RenameData> renameContexts = new HashMap<>();
     private final static Component PREFIX =
             Component.text("[")
                     .color(NamedTextColor.YELLOW)
@@ -104,6 +108,8 @@ public final class BuildSystem extends JavaPlugin {
         getServer().getPluginManager().registerEvents(ui, this);
 
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
+
+        getServer().getPluginManager().registerEvents(new AnvilListener(), this);
 
         configManager = new ConfigManager();
         try {
@@ -160,8 +166,8 @@ public final class BuildSystem extends JavaPlugin {
                 propertiesConfig.set("saveAndLoadPlayerInventory", true);
             }
 
-            if (!propertiesConfig.contains("safeKillAll")) {
-                propertiesConfig.set("safeKillAll", true);
+            if (!propertiesConfig.contains("safeCommandExecute")) {
+                propertiesConfig.set("safeCommandExecute", true);
             }
 
             if (!propertiesConfig.contains("saveAndLoadPlayerLocation")) {
@@ -339,5 +345,15 @@ public final class BuildSystem extends JavaPlugin {
     public static FileConfiguration getConfiguration() {
         return configuration;
     }
+    public void registerRename(Player player, RenameData context) {
+        renameContexts.put(player.getUniqueId(), context);
+    }
 
+    public RenameData getRenameContext(UUID uuid) {
+        return renameContexts.get(uuid);
+    }
+
+    public void unregisterRename(UUID uuid) {
+        renameContexts.remove(uuid);
+    }
 }
