@@ -10,3 +10,4 @@ Feel free to fork this Project or contribute to it! Thx <3**
 - [X] Add /build add command for adding to a key in the config. If using location use ~ ~ ~ [~ ~] or <x> <y> <z> [pitch yaw]
 - [X] Add /build for opening build menu.
 - [ ] Cleanup configmanager and overall a little code overhaul. Remove Hardcoded stuff, etc.)
+- [ ] (Fix possible Memoryleak?) 
