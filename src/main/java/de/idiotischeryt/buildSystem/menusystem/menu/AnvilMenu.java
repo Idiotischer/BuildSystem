@@ -21,7 +21,7 @@ import org.bukkit.inventory.view.AnvilView;
 import java.util.List;
 
 public class AnvilMenu extends Menu {
-    final Menu currentMenu;
+    public final Menu currentMenu;
     final String label;
     String defaultText;
     final String[] map;
@@ -31,7 +31,7 @@ public class AnvilMenu extends Menu {
     final boolean emptyAllowed;
     final boolean allowEndWith;
     final List<String> endWith;
-    InventoryView inventoryView;
+    public InventoryView inventoryView;
 
     public AnvilMenu(PlayerMenuUtility playerMenuUtility, Menu currentMenu, String label, String defaultText,
                      String[] map, List<String> needed, String errText, boolean contains, boolean emptyAllowed, boolean allowEndWith, List<String> endWith) {
