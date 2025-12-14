@@ -55,7 +55,9 @@ public class AnvilListener implements Listener {
 
         event.getInventory().clear();
         BuildSystem.getInstance().unregisterRename(player.getUniqueId());
-        Bukkit.getScheduler().runTask(BuildSystem.getInstance(), context.getThisMenu().currentMenu::open);
+        if(event.getReason() != InventoryCloseEvent.Reason.OPEN_NEW) {
+            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), context.getThisMenu().currentMenu::open);
+        }
     }
 
     private void handleAnvilPrepare(Player player, RenameData context) {
@@ -66,7 +68,7 @@ public class AnvilListener implements Listener {
         }
 
         if(!context.getThisMenu().biome) {
-            if (isValid(inputText)) {
+            if (!isValid(inputText)) {
                 reopenWithError(context, player, ChatColor.RED + "Only [a-z0-9/._-] allowed!");
                 return;
             }
