@@ -66,7 +66,7 @@ public class AnvilListener implements Listener {
         }
 
         if(!context.getThisMenu().biome) {
-            if (!isValid(inputText)) {
+            if (isValid(inputText)) {
                 reopenWithError(context, player, ChatColor.RED + "Only [a-z0-9/._-] allowed!");
                 return;
             }
