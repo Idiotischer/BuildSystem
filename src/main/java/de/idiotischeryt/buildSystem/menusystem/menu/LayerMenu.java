@@ -6,7 +6,6 @@ import de.idiotischeryt.buildSystem.menusystem.PlayerMenuUtility;
 import de.idiotischeryt.buildSystem.util.Layer;
 import de.rapha149.signgui.exception.SignGUIVersionException;
 import it.unimi.dsi.fastutil.Pair;
-import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -232,30 +231,45 @@ public class LayerMenu extends Menu {
     }
 
     public void openBiomeUI(Menu current) {
-        AnvilGUI.Builder builder = new AnvilGUI.Builder()
-                .plugin(BuildSystem.getInstance())
-                .interactableSlots(1)
-                .text("Biome name here")
-                .itemLeft(makeItem(Material.NAME_TAG, "Rename me", false))
-                .onClose(state -> Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open))
-                .onClick((slot, state) -> {
-                    String inputText = state.getText();
-                    boolean isValidBiome = Arrays.stream(Biome.values()).anyMatch(b -> b.name().equalsIgnoreCase(inputText));
+        AnvilMenu menu = new AnvilMenu(playerMenuUtility,
+                current,
+                "Rename me",
+                "Biome name here",
+                biomeName,
+                Collections.emptyList(),
+                ChatColor.RED + "Biome not found!",
+                false,
+                false,
+                false
+                , Collections.emptyList(),
+                true
+        );
+        menu.open();
 
-                    if (isValidBiome) {
-                        Bukkit.getScheduler().runTaskLater(BuildSystem.getInstance(), () -> state.getPlayer().getItemOnCursor().setType(Material.AIR), 2);
-                        biomeName[0] = inputText;
-                        playerMenuUtility.getOwner().closeInventory();
-                        return Collections.singletonList(AnvilGUI.ResponseAction.close());
-                    } else {
-                        return Arrays.asList(
-                                AnvilGUI.ResponseAction.replaceInputText("Biome Name here"),
-                                AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Biome not found!", true)
-                        );
-                    }
-                });
+        //AnvilGUI.Builder builder = new AnvilGUI.Builder()
+        //        .plugin(BuildSystem.getInstance())
+        //        .interactableSlots(1)
+        //        .text("Biome name here")
+        //        .itemLeft(makeItem(Material.NAME_TAG, "Rename me", false))
+        //        .onClose(state -> Bukkit.getScheduler().runTask(BuildSystem.getInstance(), current::open))
+        //        .onClick((slot, state) -> {
+        //            String inputText = state.getText();
+        //            boolean isValidBiome = Arrays.stream(Biome.values()).anyMatch(b -> b.name().equalsIgnoreCase(inputText));
 
-        builder.open(playerMenuUtility.getOwner());
+        //            if (isValidBiome) {
+        //                Bukkit.getScheduler().runTaskLater(BuildSystem.getInstance(), () -> state.getPlayer().getItemOnCursor().setType(Material.AIR), 2);
+        //                biomeName[0] = inputText;
+        //                playerMenuUtility.getOwner().closeInventory();
+        //                return Collections.singletonList(AnvilGUI.ResponseAction.close());
+        //            } else {
+        //                return Arrays.asList(
+        //                        AnvilGUI.ResponseAction.replaceInputText("Biome Name here"),
+        //                        AnvilGUI.ResponseAction.updateTitle(ChatColor.RED + "Biome not found!", true)
+        //                );
+        //            }
+        //        });
+
+        //builder.open(playerMenuUtility.getOwner());
     }
 
     @Override

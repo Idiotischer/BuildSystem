@@ -1,10 +1,12 @@
 package de.idiotischeryt.buildSystem.listeners;
 
 import de.idiotischeryt.buildSystem.BuildSystem;
+import de.idiotischeryt.buildSystem.event.BiomeFetchEvent;
 import de.idiotischeryt.buildSystem.menusystem.menu.RenameData;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -62,36 +64,66 @@ public class AnvilListener implements Listener {
         if (inputText.isEmpty()) {
             return;
         }
-        if (!isValid(inputText)) {
-            reopenWithError(context, player, ChatColor.RED + "Only [a-z0-9/._-] allowed!");
-            return;
-        }
 
-        if (!context.allowEndWith()) {
-            for (String s : context.getEndWith()) {
-                if (inputText.endsWith(s)) {
-                    reopenWithError(context, player, ChatColor.RED + "Can't use template Name!");
-                    return;
+        if(!context.getThisMenu().biome) {
+            if (!isValid(inputText)) {
+                reopenWithError(context, player, ChatColor.RED + "Only [a-z0-9/._-] allowed!");
+                return;
+            }
+
+            if (!context.allowEndWith()) {
+                for (String s : context.getEndWith()) {
+                    if (inputText.endsWith(s)) {
+                        reopenWithError(context, player, ChatColor.RED + "Can't use template Name!");
+                        return;
+                    }
                 }
             }
-        }
 
-        if (context.emptyAllowed() && !context.getNeeded().contains("")) context.getNeeded().add("");
-        if (context.emptyAllowed() && !context.getNeeded().contains("Other")) context.getNeeded().add("Other");
+            if (context.emptyAllowed() && !context.getNeeded().contains("")) context.getNeeded().add("");
+            if (context.emptyAllowed() && !context.getNeeded().contains("Other")) context.getNeeded().add("Other");
 
-        boolean isInNeeded = context.getNeeded().contains(inputText);
-        if ((context.contains() && isInNeeded) || (!context.contains() && !isInNeeded)) {
-            reopenWithError(context, player, context.getErrorText());
-            return;
-        }
-
-        context.getMap()[0] = inputText;
-
-        Bukkit.getScheduler().runTaskLater(BuildSystem.getInstance(), () -> {
-            if (player.getItemOnCursor() != null && !player.getItemOnCursor().getType().isAir()) {
-                player.getItemOnCursor().setType(Material.AIR);
+            boolean isInNeeded = context.getNeeded().contains(inputText);
+            if ((context.contains() && isInNeeded) || (!context.contains() && !isInNeeded)) {
+                reopenWithError(context, player, context.getErrorText());
+                return;
             }
-        }, 2);
+
+            context.getMap()[0] = inputText;
+
+            Bukkit.getScheduler().runTaskLater(BuildSystem.getInstance(), () -> {
+                if (player.getItemOnCursor() != null && !player.getItemOnCursor().getType().isAir()) {
+                    player.getItemOnCursor().setType(Material.AIR);
+                }
+            }, 2);
+        } else {
+            boolean isValidBiome = false;
+
+            for (Biome biome : Biome.values()) {
+                if (biome.name().equalsIgnoreCase(inputText)) {
+                    isValidBiome = true;
+                    break;
+                }
+            }
+
+            BiomeFetchEvent event = new BiomeFetchEvent(inputText, isValidBiome);
+            event.callEvent();
+
+            Bukkit.getScheduler().runTask(BuildSystem.getInstance(), () -> {
+                if (!event.isValid()) {
+                    reopenWithError(context, player, ChatColor.RED + "Not a valid Biome");
+                    return;
+                }
+
+                context.getMap()[0] = inputText;
+
+                Bukkit.getScheduler().runTaskLater(BuildSystem.getInstance(), () -> {
+                    if (player.getItemOnCursor() != null && !player.getItemOnCursor().getType().isAir()) {
+                        player.getItemOnCursor().setType(Material.AIR);
+                    }
+                }, 2);
+            });
+        }
 
         context.getOnFinish().accept(inputText);
         Bukkit.getScheduler().runTask(BuildSystem.getInstance(), context.getThisMenu().currentMenu::open);

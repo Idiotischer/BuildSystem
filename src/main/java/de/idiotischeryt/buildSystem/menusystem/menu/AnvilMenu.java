@@ -32,9 +32,10 @@ public class AnvilMenu extends Menu {
     final boolean allowEndWith;
     final List<String> endWith;
     public InventoryView inventoryView;
+    public final boolean biome;
 
     public AnvilMenu(PlayerMenuUtility playerMenuUtility, Menu currentMenu, String label, String defaultText,
-                     String[] map, List<String> needed, String errText, boolean contains, boolean emptyAllowed, boolean allowEndWith, List<String> endWith) {
+                     String[] map, List<String> needed, String errText, boolean contains, boolean emptyAllowed, boolean allowEndWith, List<String> endWith, boolean biome) {
         super(playerMenuUtility);
         this.inventory = null;
         this.allowEndWith = allowEndWith;
@@ -47,6 +48,7 @@ public class AnvilMenu extends Menu {
         this.defaultText = defaultText;
         this.label = label;
         this.currentMenu = currentMenu;
+        this.biome = biome;
     }
 
     public void setDefaultText(String defaultText) {
